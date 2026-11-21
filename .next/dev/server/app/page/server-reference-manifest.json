@@ -1,0 +1,25 @@
+{
+  "node": {
+    "40559e7268b519a975c694f3195fb18aaa1b7b4aae": {
+      "workers": {
+        "app/page": {
+          "moduleId": "[project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/invoice-actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "exportedName": "updateBillDetails",
+      "filename": "app/invoice-actions.ts"
+    },
+    "40b69ca4133e3990a1baef93d4b26a821dd419562c": {
+      "workers": {
+        "app/page": {
+          "moduleId": "[project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/invoice-actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "exportedName": "recordPayment",
+      "filename": "app/actions.ts"
+    }
+  },
+  "edge": {}
+}
