@@ -284,6 +284,57 @@ export async function updateInvoice(input: unknown): Promise<ActionResult<{ id: 
   }
 }
 
+const billDetailsSchema = customerSchema
+  .pick({ name: true, whatsappNumber: true })
+  .extend({
+    billId: idSchema,
+    totalAmount: z.number().int().positive("Amount likhiye"),
+    dueDate: dateString,
+    notes: z.string().trim().max(500).optional(),
+  });
+
+export async function updateBillDetails(input: unknown): Promise<ActionResult<{ id: number }>> {
+  const parsed = billDetailsSchema.safeParse(input);
+  if (!parsed.success) return fail(firstIssue(parsed.error));
+  const data = parsed.data;
+  try {
+    const bill = await loadBill(data.billId);
+    if (!bill) return fail("Invoice not found (Invoice nahi mila)");
+
+    const derived = derive(bill, new Date());
+    if (!allowedActions(derived.display, derived.paidAmount).canEdit) {
+      return fail("This invoice is locked and cannot be edited.");
+    }
+    if (data.totalAmount < derived.paidAmount) {
+      return fail("New total cannot be less than the amount already paid");
+    }
+
+    const dueDate = parseInputDate(data.dueDate);
+    await prisma.$transaction([
+      prisma.customer.update({
+        where: { id: bill.customerId },
+        data: { name: data.name, whatsappNumber: data.whatsappNumber },
+      }),
+      prisma.bill.update({
+        where: { id: bill.id },
+        data: {
+          totalAmount: data.totalAmount,
+          subtotal: data.totalAmount + bill.discount,
+          dueDate,
+          termsDays: termsDaysFromDue(bill.billDate, dueDate),
+          notes: data.notes ? data.notes : null,
+        },
+      }),
+    ]);
+
+    refresh(bill.id);
+    return ok({ id: bill.id });
+  } catch {
+    return fail(SAVE_ERROR);
+  }
+}
+
+
 export async function markSent(
   input: unknown,
 ): Promise<ActionResult<{ id: number; status: string }>> {

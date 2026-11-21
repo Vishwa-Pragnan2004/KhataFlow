@@ -31,8 +31,9 @@ const METHOD_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
-export default async function BillDetailPage({ params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export default async function BillDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   if (!Number.isInteger(id) || id <= 0) notFound();
 
   const bill = await prisma.bill.findUnique({

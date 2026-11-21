@@ -133,8 +133,9 @@ export function buildListHref(statuses: FilterStatus[], query: string): string {
   return "/?" + params.toString();
 }
 
+// Single-select: picking a status shows only that status. Picking the
+// already-active status returns to "All" (every status, no filter).
 export function toggleStatus(current: FilterStatus[], status: FilterStatus): FilterStatus[] {
-  const has = current.includes(status);
-  const next = FILTER_STATUSES.filter((s) => (s === status ? !has : current.includes(s)));
-  return next.length > 0 ? next : [...DEFAULT_FILTER];
+  const isOnlyActive = current.length === 1 && current[0] === status;
+  return isOnlyActive ? [...FILTER_STATUSES] : [status];
 }

@@ -178,7 +178,11 @@ describe("buildListHref", () => {
 });
 
 describe("toggleStatus", () => {
-  it("falls back to the default when the result would be empty", () => {
-    expect(toggleStatus(["OVERDUE"], "OVERDUE")).toEqual(["OVERDUE", "UNPAID"]);
+  it("selects only the clicked status", () => {
+    expect(toggleStatus(["OVERDUE", "UNPAID"], "PARTIALLY_PAID")).toEqual(["PARTIALLY_PAID"]);
+  });
+
+  it("returns to All when the already-active status is clicked", () => {
+    expect(toggleStatus(["OVERDUE"], "OVERDUE")).toEqual(["UNPAID", "PARTIALLY_PAID", "OVERDUE", "PAID"]);
   });
 });

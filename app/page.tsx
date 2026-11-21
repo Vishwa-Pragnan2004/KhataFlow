@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatRupees } from "@/lib/money";
-import { formatShortDate } from "@/lib/dates";
+import { formatShortDate, toInputDate } from "@/lib/dates";
 import { lastRemindedLabel } from "@/lib/reminders";
 import RecordPaymentModal from "@/components/RecordPaymentModal";
+import EditBillModal from "@/components/EditBillModal";
 import {
   FILTER_STATUSES,
   type FilterStatus,
@@ -43,20 +44,33 @@ function chipClass(active: boolean): string {
 export default async function UdhaarListPage({
   searchParams,
 }: {
-  searchParams: { status?: string; q?: string };
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
-  const statuses = parseStatusParam(searchParams.status);
-  const query = (searchParams.q ?? "").trim();
+  const params = await searchParams;
+  const statuses = parseStatusParam(params.status);
+  const query = (params.q ?? "").trim();
 
   const bills = await prisma.bill.findMany({
     include: {
-      customer: { select: { name: true } },
+      customer: { select: { name: true, whatsappNumber: true } },
       payments: { select: { amount: true } },
       reminders: { select: { sentAt: true }, orderBy: { sentAt: "desc" }, take: 1 },
     },
     orderBy: { id: "desc" },
   });
   const lastSentById = new Map(bills.map((b) => [b.id, b.reminders[0]?.sentAt ?? null]));
+  const editById = new Map(
+    bills.map((b) => [
+      b.id,
+      {
+        customerName: b.customer.name,
+        whatsappNumber: b.customer.whatsappNumber,
+        totalAmount: b.totalAmount,
+        dueDate: toInputDate(b.dueDate),
+        notes: b.notes ?? "",
+      },
+    ]),
+  );
 
   const all = buildUdhaarRows(
     bills.map((b) => ({
@@ -131,7 +145,7 @@ export default async function UdhaarListPage({
           <Link
             key={chip.status}
             href={buildListHref(toggleStatus(statuses, chip.status), query)}
-            className={chipClass(statuses.includes(chip.status))}
+            className={chipClass(statuses.length === 1 && statuses[0] === chip.status)}
           >
             {chip.label}
           </Link>
@@ -154,6 +168,7 @@ export default async function UdhaarListPage({
         <ul className="flex flex-col gap-3">
           {shown.map((row) => {
             const badge = BADGE[row.status];
+            const edit = editById.get(row.id);
             return (
               <li key={row.id}>
                 <div className="flex flex-col gap-2 rounded-xl border bg-white p-4">
@@ -201,6 +216,7 @@ export default async function UdhaarListPage({
                   </Link>
 
                   {row.balance > 0 && <RecordPaymentModal billId={row.id} balance={row.balance} />}
+                  {edit && <EditBillModal billId={row.id} {...edit} />}
                 </div>
               </li>
             );

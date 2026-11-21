@@ -1,1 +1,4 @@
-{"version":1,"functions":{"/bill/new":{},"/bill/[id]":{},"/":{}}}
+{
+  "version": 1,
+  "functions": {}
+}
