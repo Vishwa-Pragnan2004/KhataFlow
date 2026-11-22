@@ -1,1 +1,29 @@
-node_modules/ 
+# Dependencies
+node_modules/
+
+# Next.js build output and cache
+.next/
+out/
+
+# Codebenders scratch and dev files
+.codebenders/
+.codebenders/scratch/
+
+# Local databases
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# Environment variables
+.env.local
+.env*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
