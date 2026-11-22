@@ -211,6 +211,8 @@ export default function QuickBillForm(props: {
 
   const todayInput = toInputDate(startOfDay(new Date()));
 
+  const [billDateStr, setBillDateStr] = useState(todayInput);
+
   const [paidStr, setPaidStr] = useState("");
 
   const [method, setMethod] = useState<PaymentMethod>("CASH");
@@ -358,11 +360,22 @@ export default function QuickBillForm(props: {
       return;
     }
 
+    if (!billDateStr) {
+      setError("Please select a bill date.");
+      return;
+    }
+
+    if (billDateStr > todayInput) {
+      setError("Bill date cannot be in the future (Bill ki tarikh aaj ya pehle ki honi chahiye)");
+      return;
+    }
+
     const input = {
       customerId: selectedCustomer.id,
       totalAmount: total,
       itemsNote: note || undefined,
       dueDate: dueInput,
+      billDate: billDateStr,
       paidNow,
       paidMethod: method,
     };
@@ -556,7 +569,7 @@ export default function QuickBillForm(props: {
 
           /* Itemized bill */
           <div className="flex flex-col gap-3">
-            {rows.map((r) => {
+            {rows.map((r, index) => {
               const product = products.find(
                 (p) => String(p.id) === r.productId
               );
@@ -576,8 +589,24 @@ export default function QuickBillForm(props: {
               return (
               <div
                 key={r.id}
-                className="flex flex-col gap-2"
+                className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-4 shadow-sm"
               >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Saman {index + 1}
+                  </span>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeRow(r.id)}
+                      aria-label="Saman hatao"
+                      className="min-h-12 w-10 text-2xl text-stone-500"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <ProductCombobox
                     products={products}
@@ -651,16 +680,6 @@ export default function QuickBillForm(props: {
                     />
                   )}
 
-                  {rows.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeRow(r.id)}
-                      aria-label="Saman hatao"
-                      className="min-h-12 w-10 text-2xl text-stone-500"
-                    >
-                      ×
-                    </button>
-                  )}
                 </div>
               </div>
               );
@@ -679,6 +698,21 @@ export default function QuickBillForm(props: {
             </p>
           </div>
         )}
+      </section>
+
+      {/* Bill date */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+        <label htmlFor="bill-date" className="text-sm font-semibold text-stone-800">
+          Bill date (Bill ki tarikh)
+        </label>
+        <input
+          id="bill-date"
+          type="date"
+          max={todayInput}
+          value={billDateStr}
+          onChange={(e) => setBillDateStr(e.target.value)}
+          className="h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base text-stone-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        />
       </section>
 
       {/* Due date */}
@@ -822,6 +856,12 @@ export default function QuickBillForm(props: {
             <span className="text-sm text-stone-600">Balance due (Baaki)</span>
             <span className="text-lg font-bold text-stone-900">
               {formatRupees(Math.max(0, total - paidNow))}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-stone-600">Bill date (Bill ki tarikh)</span>
+            <span className="text-sm font-medium text-stone-900">
+              {billDateStr ? formatShortDate(parseInputDate(billDateStr)) : "Not set"}
             </span>
           </div>
           <div className="flex items-center justify-between gap-2">
