@@ -13,6 +13,7 @@ export default function ReminderPanel(props: { billId: number; overdue: boolean 
   const [waLink, setWaLink] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
+
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function ReminderPanel(props: { billId: number; overdue: boolean 
     void navigator.clipboard.writeText(message);
     setCopied(true);
   }
+
 
   function handleOpenWhatsApp() {
     if (!waLink) return;
@@ -119,6 +121,7 @@ export default function ReminderPanel(props: { billId: number; overdue: boolean 
       >
         Open in WhatsApp (WhatsApp Kholo)
       </button>
+
     </section>
   );
 }

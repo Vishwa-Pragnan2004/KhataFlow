@@ -92,6 +92,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
           <p className="mt-1 text-sm text-stone-500">Due {formatShortDate(bill.dueDate)}</p>
+          <p className="mt-1 text-sm text-stone-500">Added {formatShortDate(bill.createdAt)}</p>
         </div>
       </section>
 

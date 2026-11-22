@@ -17,6 +17,7 @@ export const billSchema = z
     totalAmount: z.number().int().positive("Amount likhiye"),
     itemsNote: z.string().trim().max(500).optional(),
     dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    billDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bill date chuniye").optional(),
     paidNow: z.number().int().min(0).default(0),
     paidMethod: z.enum(PAYMENT_METHODS).default("CASH"),
   })

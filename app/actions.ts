@@ -18,6 +18,8 @@ import {
   type ReminderLanguage,
 } from "@/lib/reminders";
 
+
+
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 function ok<T>(data: T): ActionResult<T> {
@@ -77,6 +79,7 @@ export async function createBill(input: {
   totalAmount: number;
   itemsNote?: string | null;
   dueDate?: string | Date;
+  billDate?: string;
   dueOption?: "7D" | "15D" | "EOM" | "CUSTOM";
   paidNow?: number;
   paidMethod?: "CASH" | "UPI" | "OTHER";
@@ -123,6 +126,20 @@ export async function createBill(input: {
       dueDate = addDays(today, 15);
     }
 
+    let billCreatedAt: Date | undefined;
+    if (input.billDate) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.billDate)) {
+        return fail("Invalid bill date (Bill ki tarikh galat hai)");
+      }
+      const billDay = startOfDay(parseInputDate(input.billDate));
+      if (billDay > today) {
+        return fail(
+          "Bill date cannot be in the future (Bill ki tarikh aaj ya pehle ki honi chahiye)",
+        );
+      }
+      billCreatedAt = new Date(billDay.getFullYear(), billDay.getMonth(), billDay.getDate(), 12, 0, 0);
+    }
+
     const totalAmount = Math.round(input.totalAmount);
     const paidNow = Math.max(0, Math.round(input.paidNow ?? 0));
     const balance = Math.max(0, totalAmount - paidNow);
@@ -141,6 +158,7 @@ export async function createBill(input: {
           itemsNote: input.itemsNote?.trim() ? input.itemsNote.trim() : null,
           notes: input.itemsNote?.trim() ? input.itemsNote.trim() : null,
           billDate: today,
+          createdAt: billCreatedAt,
           dueDate,
           status: "SENT",
           sentAt: today,
@@ -387,3 +405,5 @@ export async function logReminder(input: {
     return fail("Could not log reminder (Reminder log nahi ho paya)");
   }
 }
+
+

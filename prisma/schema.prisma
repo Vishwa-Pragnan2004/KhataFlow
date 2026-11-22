@@ -104,3 +104,14 @@ model Expense {
   recurring String?
   createdAt DateTime  @default(now())
 }
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  name         String
+  nameHi       String?
+  category     String
+  unit         String
+  pricePerUnit Int
+  createdAt    DateTime @default(now())
+}
+
