@@ -93,6 +93,13 @@ export default async function UdhaarListPage({
       <header className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Udhaar Receivables (Baki Khata)</h1>
         <Link
+          href="/forecast"
+          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100"
+        >
+          Cash Forecast (Nakad Anumaan)
+        </Link>
+
+        <Link
           href="/bill/new"
           className="flex min-h-16 w-full items-center justify-center rounded-xl bg-green-700 text-lg font-semibold text-white"
         >

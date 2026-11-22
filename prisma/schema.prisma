@@ -93,3 +93,14 @@ model ActivityLog {
   detail    String
   createdAt DateTime @default(now())
 }
+
+model Expense {
+  id        Int       @id @default(autoincrement())
+  title     String
+  category  String
+  amount    Int
+  dueDate   DateTime
+  paidOn    DateTime?
+  recurring String?
+  createdAt DateTime  @default(now())
+}

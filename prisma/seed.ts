@@ -259,6 +259,49 @@ async function main(): Promise<void> {
     },
   });
 
+  if ((await prisma.expense.count()) === 0) {
+    const expenseToday = startOfDay(new Date());
+    const expenseSeeds: {
+      title: string;
+      category: string;
+      amount: number;
+      recurring: string | null;
+      dueOffset: number;
+    }[] = [
+      { title: "Shop rent", category: "RENT", amount: 12000, recurring: "MONTHLY", dueOffset: 5 },
+      { title: "Shop rent", category: "RENT", amount: 12000, recurring: "MONTHLY", dueOffset: 35 },
+      { title: "Shop rent", category: "RENT", amount: 12000, recurring: "MONTHLY", dueOffset: 65 },
+      {
+        title: "Shop rent (last month)",
+        category: "RENT",
+        amount: 12000,
+        recurring: "MONTHLY",
+        dueOffset: -3,
+      },
+      { title: "Staff salary (Ravi)", category: "SALARY", amount: 9000, recurring: "MONTHLY", dueOffset: 10 },
+      { title: "Staff salary (Meena)", category: "SALARY", amount: 9000, recurring: "MONTHLY", dueOffset: 10 },
+      { title: "Staff salary (Ravi)", category: "SALARY", amount: 9000, recurring: "MONTHLY", dueOffset: 40 },
+      { title: "Wholesale stock order", category: "SUPPLIER", amount: 8500, recurring: null, dueOffset: 18 },
+      { title: "Packaging supplier", category: "SUPPLIER", amount: 3200, recurring: null, dueOffset: 50 },
+      { title: "Electricity", category: "UTILITY", amount: 1800, recurring: null, dueOffset: 12 },
+      { title: "Shop insurance", category: "OTHER", amount: 4000, recurring: null, dueOffset: 80 },
+    ];
+    for (const e of expenseSeeds) {
+      await prisma.expense.create({
+        data: {
+          title: e.title,
+          category: e.category,
+          amount: e.amount,
+          recurring: e.recurring,
+          dueDate: addDays(expenseToday, e.dueOffset),
+          paidOn: null,
+        },
+      });
+    }
+    console.log(`Seeded ${expenseSeeds.length} expenses.`);
+  }
+
+
   const existingBills = await prisma.bill.count();
   if (existingBills > 0) {
     console.log("Seed skipped: bills already exist. Run `npx prisma migrate reset` to reseed.");
