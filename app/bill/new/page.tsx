@@ -21,7 +21,7 @@ export default async function NewBillPage() {
     <div className="flex w-full flex-col gap-4 px-4 py-6 pb-10 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/mascot.png" alt="KhataFlow mascot" className="h-12 w-12 shrink-0 object-contain" />
+          <img src="/mascot.png" alt="KhataFlow mascot" className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 object-contain" />
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">New Credit Bill (Naya Udhaar Bill)</h1>
         </div>
         <a href="/" className="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50">

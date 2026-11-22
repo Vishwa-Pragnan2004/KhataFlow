@@ -24,7 +24,14 @@ export type ForecastExpense = {
   paidOn: Date | null;
 };
 
-export type Scenario = { customerId: number; delayDays: number };
+// Which of a customer's unpaid bills a scenario shifts. Absent means "all".
+export type ScenarioTarget = "all" | "overdue" | "next" | "endOfMonth";
+
+export type Scenario = {
+  customerId: number;
+  delayDays: number;
+  target?: ScenarioTarget;
+};
 
 export type ForecastInput = {
   today: Date;
@@ -84,7 +91,12 @@ export type ScenarioComparison = {
   base: ForecastResult;
   scenario: ForecastResult;
   lowestCashChange: number;
+  // No longer shown on the page; kept for backward compatibility.
   closingCash90Change: number;
+  // Scenario minus base running balance on the earliest original (pre-shift)
+  // expected date of the bills the scenario moved. Negative = cash lower on the
+  // day the money was expected. 0 when no bill is affected.
+  dueDateCashChange: number;
 };
 
 export type ChaseItem = {
@@ -101,6 +113,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Overdue bills are assumed to land this many days from today.
 const OVERDUE_RECEIPT_DAYS = 7;
 const WEEKS = 13;
+const HORIZON_DAYS = 90;
 
 // Whole days from `from` to `to`, comparing start-of-day values.
 function dayDiff(from: Date, to: Date): number {
@@ -125,8 +138,86 @@ function sumDays(
 // ---------- Forecast ----------
 
 export function buildForecast(input: ForecastInput): ForecastResult {
+  return buildForecastWithScenarios(input, input.scenario ? [input.scenario] : []);
+}
+
+// Short label for a target, for display.
+export function describeTarget(target: ScenarioTarget = "all"): string {
+  switch (target) {
+    case "overdue":
+      return "most overdue bill";
+    case "next":
+      return "next due bill";
+    case "endOfMonth":
+      return "end-of-month bills";
+    default:
+      return "all unpaid bills";
+  }
+}
+
+// Picks which of one customer's open bills a scenario shifts. `today` must already
+// be start-of-day.
+// - "all": every open bill.
+// - "overdue": the single open bill with the earliest due date strictly before today.
+// - "next": the single open bill with the earliest due date today or later.
+// - "endOfMonth": every open bill whose due date falls within the last 7 days of its
+//   own calendar month (day >= daysInMonth - 6).
+function selectTargetBills(
+  bills: ForecastBill[],
+  target: ScenarioTarget,
+  today: Date,
+): ForecastBill[] {
+  if (target === "endOfMonth") {
+    return bills.filter((b) => {
+      const due = startOfDay(b.dueDate);
+      const daysInMonth = new Date(due.getFullYear(), due.getMonth() + 1, 0).getDate();
+      return due.getDate() >= daysInMonth - 6;
+    });
+  }
+
+  if (target === "overdue" || target === "next") {
+    let best: ForecastBill | null = null;
+    let bestTime = 0;
+    for (const b of bills) {
+      const due = startOfDay(b.dueDate).getTime();
+      const eligible =
+        target === "overdue" ? due < today.getTime() : due >= today.getTime();
+      if (!eligible) continue;
+      if (best === null || due < bestTime) {
+        best = b;
+        bestTime = due;
+      }
+    }
+    return best ? [best] : [];
+  }
+
+  return bills;
+}
+
+// Shared engine. Each scenario shifts its customer's target bills by delayDays.
+// If several scenarios name the same customer, the last one wins.
+function buildForecastWithScenarios(
+  input: Omit<ForecastInput, "scenario">,
+  scenarios: Scenario[],
+): ForecastResult {
   const today = startOfDay(input.today);
-  const { openingCash, scenario } = input;
+  const { openingCash } = input;
+
+  // Customer -> winning scenario (last one wins).
+  const delayByCustomer = new Map<number, Scenario>();
+  for (const s of scenarios) delayByCustomer.set(s.customerId, s);
+
+  // Bill id -> delay days, for the bills each winning scenario's target selects.
+  const openBills = input.bills.filter(
+    (b) => b.balance > 0 && b.status !== "DRAFT" && b.status !== "CANCELLED",
+  );
+  const delayByBill = new Map<number, number>();
+  for (const s of delayByCustomer.values()) {
+    const customerBills = openBills.filter((b) => b.customerId === s.customerId);
+    for (const b of selectTargetBills(customerBills, s.target ?? "all", today)) {
+      delayByBill.set(b.id, s.delayDays);
+    }
+  }
 
   // Inflows: open bills only (drafts and cancelled excluded).
   const inflowItems: InflowItem[] = [];
@@ -146,9 +237,10 @@ export function buildForecast(input: ForecastInput): ForecastResult {
       expected = addDays(today, OVERDUE_RECEIPT_DAYS);
     }
 
-    // What-if: delay receipts for the scenario customer.
-    if (scenario && bill.customerId === scenario.customerId) {
-      expected = addDays(expected, scenario.delayDays);
+    // What-if: delay the receipts selected by a scenario's target.
+    const delay = delayByBill.get(bill.id);
+    if (delay !== undefined) {
+      expected = addDays(expected, delay);
     }
 
     inflowItems.push({
@@ -185,11 +277,30 @@ export function buildForecast(input: ForecastInput): ForecastResult {
     amount: o.amount,
   }));
 
-  // Weekly buckets: day 0-6, 7-13, ..., 84-90.
+  // Daily running balance over days 0..HORIZON_DAYS. Day-0 flows are applied
+  // before the minimum is taken, so an overdue expense counts immediately.
+  const dailyNet = new Array<number>(HORIZON_DAYS + 1).fill(0);
+  for (const i of inflowDays) {
+    if (i.day >= 0 && i.day <= HORIZON_DAYS) dailyNet[i.day] += i.amount;
+  }
+  for (const o of outflowDays) {
+    if (o.day >= 0 && o.day <= HORIZON_DAYS) dailyNet[o.day] -= o.amount;
+  }
+  let dailyCash = openingCash;
+  let lowestCash = 0;
+  let lowestCashDate = today;
+  for (let d = 0; d <= HORIZON_DAYS; d++) {
+    dailyCash += dailyNet[d];
+    // Ties keep the earliest date.
+    if (d === 0 || dailyCash < lowestCash) {
+      lowestCash = dailyCash;
+      lowestCashDate = addDays(today, d);
+    }
+  }
+
+  // Weekly buckets (chart only): day 0-6, 7-13, ..., 84-90.
   const buckets: Bucket[] = [];
   let runningCash = openingCash;
-  let lowestCash = openingCash;
-  let lowestCashDate = today;
   let firstNegativeDate: Date | null = openingCash < 0 ? today : null;
 
   for (let w = 0; w < WEEKS; w++) {
@@ -211,15 +322,11 @@ export function buildForecast(input: ForecastInput): ForecastResult {
       closingCash: runningCash,
     });
 
-    // Track the lowest point; ties keep the earliest date.
-    if (runningCash < lowestCash) {
-      lowestCash = runningCash;
-      lowestCashDate = bucketStart;
-    }
     if (firstNegativeDate === null && runningCash < 0) {
       firstNegativeDate = bucketStart;
     }
   }
+
 
   // Horizon totals (inclusive day ranges starting at today).
   const inflow30 = sumDays(inflowDays, 0, 30);
@@ -249,6 +356,63 @@ export function buildForecast(input: ForecastInput): ForecastResult {
   };
 }
 
+// Running balance on `date` (end of that day): opening cash plus every inflow and
+// outflow dated on or before it. Works for any date, inside or beyond the horizon.
+function balanceOn(
+  result: ForecastResult,
+  openingCash: number,
+  today: Date,
+  date: Date,
+): number {
+  const day = dayDiff(today, date);
+  let balance = openingCash;
+  for (const i of result.inflowItems) {
+    if (dayDiff(today, i.expectedDate) <= day) balance += i.amount;
+  }
+  for (const o of result.outflowItems) {
+    if (dayDiff(today, o.date) <= day) balance -= o.amount;
+  }
+  return balance;
+}
+
+// Builds the comparison. dueDateCashChange is measured on the earliest ORIGINAL
+// (pre-shift) expected date among the bills the scenario moved; 0 if none moved.
+function makeComparison(
+  input: Pick<ForecastInput, "today" | "openingCash">,
+  base: ForecastResult,
+  scenario: ForecastResult,
+): ScenarioComparison {
+  const baseDateById = new Map<number, Date>();
+  for (const item of base.inflowItems) baseDateById.set(item.billId, item.expectedDate);
+
+  let originalDate: Date | null = null;
+  for (const item of scenario.inflowItems) {
+    const original = baseDateById.get(item.billId);
+    if (original === undefined || original.getTime() === item.expectedDate.getTime()) {
+      continue;
+    }
+    if (originalDate === null || original.getTime() < originalDate.getTime()) {
+      originalDate = original;
+    }
+  }
+
+  const dueDateCashChange =
+    originalDate === null
+      ? 0
+      : balanceOn(scenario, input.openingCash, input.today, originalDate) -
+        balanceOn(base, input.openingCash, input.today, originalDate);
+
+  return {
+    base,
+    scenario,
+    lowestCashChange: scenario.lowestCash - base.lowestCash,
+    // Kept for backward compatibility. No longer shown on the page; the page
+    // uses dueDateCashChange instead.
+    closingCash90Change: scenario.closingCash90 - base.closingCash90,
+    dueDateCashChange,
+  };
+}
+
 // Base forecast vs. forecast with a customer payment delay applied.
 // Changes are scenario minus base.
 export function compareScenario(
@@ -257,14 +421,21 @@ export function compareScenario(
 ): ScenarioComparison {
   const base = buildForecast(input);
   const result = buildForecast({ ...input, scenario });
-
-  return {
-    base,
-    scenario: result,
-    lowestCashChange: result.lowestCash - base.lowestCash,
-    closingCash90Change: result.closingCash90 - base.closingCash90,
-  };
+  return makeComparison(input, base, result);
 }
+
+// Baseline vs. forecast with ALL scenarios applied together. An empty list gives
+// zero changes. Duplicate customerIds: the last scenario wins. Any input.scenario
+// is ignored here; pass scenarios explicitly.
+export function compareScenarios(
+  input: ForecastInput,
+  scenarios: Scenario[],
+): ScenarioComparison {
+  const base = buildForecastWithScenarios(input, []);
+  const result = buildForecastWithScenarios(input, scenarios);
+  return makeComparison(input, base, result);
+}
+
 
 // Open bills already past due, largest balance first.
 export function suggestChaseList(bills: ForecastBill[], today: Date): ChaseItem[] {

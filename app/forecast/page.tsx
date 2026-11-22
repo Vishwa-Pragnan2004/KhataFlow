@@ -5,24 +5,32 @@ import { addDays, startOfDay } from "@/lib/dates";
 import { getBalance, sumPayments } from "@/lib/billStatus";
 import {
   buildForecast,
-  compareScenario,
+  compareScenarios,
+  describeTarget,
   suggestChaseList,
   type ForecastBill,
   type ForecastExpense,
   type ForecastInput,
   type Scenario,
+  type ScenarioTarget,
 } from "@/lib/forecast";
 import ForecastCharts from "@/components/forecast/ForecastCharts";
+import WhatIfPanel, { type TargetAvailability } from "./WhatIfPanel";
+
 
 
 export const dynamic = "force-dynamic";
 
-// Sample data: fixed opening cash until a real cash ledger exists.
-const OPENING_CASH = 25000;
-
 const EXCLUDED_STATUSES = ["DRAFT", "CANCELLED"];
 
-const DEFAULT_DELAY_DAYS = 15;
+type WhatIfRow = { customerId: number; delayDays: number; target: ScenarioTarget };
+
+const SCENARIO_TARGETS: ScenarioTarget[] = ["all", "overdue", "next", "endOfMonth"];
+
+function isScenarioTarget(value: string): value is ScenarioTarget {
+  return (SCENARIO_TARGETS as string[]).includes(value);
+}
+
 
 function shortDate(d: Date): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
@@ -55,7 +63,9 @@ function Kpi({
 export default async function ForecastPage({
   searchParams,
 }: {
-  searchParams: Promise<{ scenario?: string; delay?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
+
+
 }) {
   const sp = await searchParams;
   const today = new Date();
@@ -96,33 +106,99 @@ export default async function ForecastPage({
     a[1].localeCompare(b[1]),
   );
 
+  // Opening cash = settled payments received minus settled expenses paid, both dated on or before today.
+  const [cashInAgg, cashOutAgg] = await Promise.all([
+    prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: { paidOn: { lte: today } },
+    }),
+    prisma.expense.aggregate({
+      _sum: { amount: true },
+      where: { paidOn: { lte: today } },
+    }),
+  ]);
+  const openingCash =
+    Number(cashInAgg._sum.amount ?? 0) - Number(cashOutAgg._sum.amount ?? 0);
+
   const input: ForecastInput = {
     today,
-    openingCash: OPENING_CASH,
+    openingCash,
     bills,
     expenses,
   };
 
-  // What-if scenario: only applied when both customer and delay are valid.
-  const scenarioCustomerId = sp.scenario ? Number(sp.scenario) : NaN;
-  const scenarioName = customerMap.get(scenarioCustomerId);
-  const delayDays =
-    sp.delay !== undefined && sp.delay.trim() !== "" ? Number(sp.delay) : NaN;
-  const validScenario =
-    scenarioName !== undefined &&
-    Number.isInteger(delayDays) &&
-    delayDays >= 0 &&
-    delayDays <= 60;
+  // What-if rows come from s_N (customer), d_N (delay) and t_N (target), where N is the
+  // row position. Only rows with a real customer, an integer delay 0..60 and a known
+  // target are applied. An old single-scenario link (scenario/delay) counts as one row
+  // when no s_N params are present.
+  const rowIndexes = Object.keys(sp)
+    .flatMap((key) => {
+      const match = /^s_(\d+)$/.exec(key);
+      return match ? [Number(match[1])] : [];
+    })
+    .sort((a, b) => a - b);
+  const rawRows: { customer?: string; delay?: string; target?: string }[] =
+    rowIndexes.length > 0
+      ? rowIndexes.map((i) => ({
+          customer: sp[`s_${i}`],
+          delay: sp[`d_${i}`],
+          target: sp[`t_${i}`],
+        }))
+      : sp.scenario !== undefined
+        ? [{ customer: sp.scenario, delay: sp.delay }]
+        : [];
+
+  const whatIfRows: WhatIfRow[] = [];
+  const scenarios: Scenario[] = [];
+  const activeParts: string[] = [];
+  for (const raw of rawRows) {
+    const customerId = raw.customer ? Number(raw.customer) : NaN;
+    const name = customerMap.get(customerId);
+    const trimmed = raw.delay?.trim() ?? "";
+    const delayDays = trimmed !== "" ? Number(trimmed) : NaN;
+    const target = raw.target ?? "all";
+    if (name === undefined || !Number.isInteger(delayDays) || delayDays < 0 || delayDays > 60) {
+      continue;
+    }
+    if (!isScenarioTarget(target)) continue;
+    whatIfRows.push({ customerId, delayDays, target });
+    scenarios.push({ customerId, delayDays, target });
+    activeParts.push(`${name}'s ${describeTarget(target)} pays ${delayDays} days late`);
+  }
+  const activeLabel = activeParts.join(" and ");
+
+  // Which bill targets each customer has, so the panel can disable empty ones.
+  // Unpaid means a positive balance. Overdue is due before today; next is due today or later.
+  // End-of-month means due in the last 7 days of its month.
+  const todayStart = startOfDay(today);
+  const targetAvailability: Record<string, TargetAvailability> = {};
+  for (const [id] of customers) {
+    targetAvailability[String(id)] = { overdue: false, next: false, endOfMonth: false };
+  }
+  for (const bill of bills) {
+    if (bill.balance <= 0) continue;
+    const availability = targetAvailability[String(bill.customerId)];
+    if (!availability) continue;
+    if (startOfDay(bill.dueDate).getTime() < todayStart.getTime()) {
+      availability.overdue = true;
+    } else {
+      availability.next = true;
+    }
+    const due = bill.dueDate;
+    const daysInMonth = new Date(due.getFullYear(), due.getMonth() + 1, 0).getDate();
+    if (due.getDate() > daysInMonth - 7) availability.endOfMonth = true;
+  }
+
 
   let forecast;
-  let comparison = null;
-  if (validScenario) {
-    const scenario: Scenario = { customerId: scenarioCustomerId, delayDays };
-    comparison = compareScenario(input, scenario);
+  let comparison: ReturnType<typeof compareScenarios> | null = null;
+  if (scenarios.length > 0) {
+    comparison = compareScenarios(input, scenarios);
     forecast = comparison.base;
   } else {
     forecast = buildForecast(input);
   }
+
 
   const chaseList = suggestChaseList(bills, today);
   const cashInItems = forecast.inflowItems.slice(0, 10);
@@ -147,7 +223,7 @@ export default async function ForecastPage({
               Next 90 days, built from unpaid bills and upcoming expenses
             </p>
             <p className="mt-1 text-xs text-stone-400">
-              Opening cash is sample data: {formatRupees(OPENING_CASH)}
+              Opening cash is derived from recorded payments and expenses: {formatRupees(openingCash)}
             </p>
           </div>
         </div>
@@ -300,42 +376,15 @@ export default async function ForecastPage({
           <p className="mt-1 text-sm text-stone-500">
             Pick a customer and how many days late their payments arrive.
           </p>
-          <form action="/forecast" method="get" className="mt-4 flex flex-wrap items-end gap-4">
-            <label className="flex flex-col text-sm">
-              <span className="mb-1 text-stone-600">Customer</span>
-              <select
-                name="scenario"
-                defaultValue={sp.scenario ?? ""}
-                className="min-h-12 rounded-md border border-stone-300 px-3"
-              >
-                <option value="">Choose a customer</option>
-                {customers.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col text-sm">
-              <span className="mb-1 text-stone-600">Days late</span>
-              <input
-                type="number"
-                name="delay"
-                min={0}
-                max={60}
-                defaultValue={sp.delay ?? String(DEFAULT_DELAY_DAYS)}
-                className="min-h-12 w-32 rounded-md border border-stone-300 px-3"
-              />
-            </label>
-            <button
-              type="submit"
-              className="min-h-12 rounded-md bg-stone-900 px-5 text-white"
-            >
-              Run what-if
-            </button>
-          </form>
+          <WhatIfPanel
+            customers={customers}
+            targetAvailability={targetAvailability}
+            initialRows={whatIfRows}
+          />
 
-          {comparison && scenarioName !== undefined ? (
+
+
+          {comparison ? (
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-md border-l-4 border-stone-900 bg-stone-50 p-4">
                 <p className="text-sm text-stone-500">Lowest cash change</p>
@@ -347,26 +396,27 @@ export default async function ForecastPage({
                   {formatRupees(comparison.lowestCashChange)}
                 </p>
                 <p className="mt-2 text-sm text-stone-700">
-                  If {scenarioName} pays {delayDays} days late, lowest cash changes by{" "}
+                  If {activeLabel}, lowest cash changes by{" "}
                   {formatRupees(comparison.lowestCashChange)}.
                 </p>
               </div>
               <div className="rounded-md border-l-4 border-stone-900 bg-stone-50 p-4">
-                <p className="text-sm text-stone-500">Closing cash (day 90) change</p>
+                <p className="text-sm text-stone-500">Cash on original due date change</p>
                 <p
                   className={`text-2xl font-bold ${
-                    comparison.closingCash90Change < 0 ? "text-red-600" : "text-stone-900"
+                    comparison.dueDateCashChange < 0 ? "text-red-600" : "text-stone-900"
                   }`}
                 >
-                  {formatRupees(comparison.closingCash90Change)}
+                  {formatRupees(comparison.dueDateCashChange)}
                 </p>
                 <p className="mt-2 text-sm text-stone-700">
-                  If {scenarioName} pays {delayDays} days late, day-90 cash changes by{" "}
-                  {formatRupees(comparison.closingCash90Change)}.
+                  If {activeLabel}, cash on the day the bill was originally expected changes by{" "}
+                  {formatRupees(comparison.dueDateCashChange)}.
                 </p>
               </div>
             </div>
           ) : null}
+
         </section>
 
         {/* Chase list */}
