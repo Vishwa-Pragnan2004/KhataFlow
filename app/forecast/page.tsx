@@ -3,6 +3,11 @@ import { prisma } from "@/lib/db";
 import { formatRupees } from "@/lib/money";
 import { addDays, startOfDay } from "@/lib/dates";
 import { getBalance, sumPayments } from "@/lib/billStatus";
+import StatusDonut from "@/components/StatusDonut";
+import { buildStatusGroups } from "@/lib/invoiceStatus";
+import ForecastTabs from "@/components/ForecastTabs";
+import CashForecastPanel from "@/components/cashforecast/CashForecastPanel";
+import { toForecastInput } from "@/lib/cashforecast/fromDb";
 import {
   buildForecast,
   compareScenario,
@@ -66,6 +71,17 @@ export default async function ForecastPage({
     },
   });
 
+  const statusBills = await prisma.bill.findMany({
+    where: { status: { notIn: EXCLUDED_STATUSES } },
+    include: { customer: true, payments: true },
+    orderBy: { billDate: "desc" },
+  });
+  const statusGroups = buildStatusGroups(statusBills);
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const cashInput = toForecastInput({ bills: statusBills, todayStart });
+
   const bills: ForecastBill[] = rawBills.map((bill) => ({
     id: bill.id,
     customerId: bill.customer.id,
@@ -126,8 +142,13 @@ export default async function ForecastPage({
   const cashInItems = forecast.inflowItems.slice(0, 10);
   const negative = forecast.firstNegativeDate !== null;
 
-  return (
+  const overviewContent = (<>
     <main className="min-h-screen bg-stone-100 text-stone-900">
+      <div className="mx-auto max-w-6xl px-6 pt-6">
+        <Link href="/" className="text-sm font-medium text-stone-800 underline">
+          ← Back to Udhaar Receivables
+        </Link>
+      </div>
       {/* Header panel */}
       <header className="bg-stone-900 px-6 py-8 text-white">
         <div className="mx-auto max-w-6xl">
@@ -182,6 +203,12 @@ export default async function ForecastPage({
             <p className="font-semibold">Cash stays positive for 90 days.</p>
           </div>
         )}
+
+        {/* Invoices by status */}
+        <section className="mb-6">
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">Invoices by status</h2>
+          <StatusDonut counts={statusGroups.counts} amounts={statusGroups.amounts} groups={statusGroups.groups} />
+        </section>
 
         {/* Weekly projection */}
         <section className="rounded-md bg-white p-6 shadow-sm">
@@ -383,5 +410,7 @@ export default async function ForecastPage({
         </section>
       </div>
     </main>
-  );
+  </>);
+
+  return (<ForecastTabs overview={overviewContent} cashForecast={<CashForecastPanel input={cashInput} />} />);
 }

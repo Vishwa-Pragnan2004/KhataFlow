@@ -1,4 +1,4 @@
-import { getBillStatus } from "./billStatus";
+import { getBalance, getBillStatus, sumPayments } from "./billStatus";
 import { startOfDay } from "./dates";
 import { daysOverdue } from "./udhaarList";
 
@@ -112,3 +112,93 @@ export function allowedActions(display: DisplayStatus, paidAmount: number): Invo
 export function statusAfterSend(current: StoredInvoiceStatus): StoredInvoiceStatus {
   return current === "DRAFT" ? "SENT" : current;
 }
+
+
+export type StatusCategory = "PAID" | "PARTIAL" | "UNPAID";
+
+export type StatusBillInput = {
+  billNumber: string;
+  billDate: Date;
+  totalAmount: number;
+  customer: { id: number; name: string; whatsappNumber: string };
+  payments: { amount: number }[];
+};
+
+export type GroupInvoice = {
+  billNumber: string;
+  billDate: string;
+  totalAmount: number;
+  paid: number;
+  remaining: number;
+  category: StatusCategory;
+};
+
+export type CustomerEntry = {
+  id: number;
+  name: string;
+  phone: string;
+  invoices: GroupInvoice[];
+};
+
+export type StatusGroups = {
+  counts: Record<StatusCategory, number>;
+  amounts: Record<StatusCategory, number>;
+  groups: Record<StatusCategory, CustomerEntry[]>;
+};
+
+function categorize(totalAmount: number, paid: number): StatusCategory {
+  if (getBalance(totalAmount, paid) <= 0) return "PAID";
+  if (paid > 0) return "PARTIAL";
+  return "UNPAID";
+}
+
+export function buildStatusGroups(bills: StatusBillInput[]): StatusGroups {
+  const counts: Record<StatusCategory, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
+  const amounts: Record<StatusCategory, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
+  const groups: Record<StatusCategory, CustomerEntry[]> = { PAID: [], PARTIAL: [], UNPAID: [] };
+  const byCustomer: Record<StatusCategory, Map<number, CustomerEntry>> = {
+    PAID: new Map(),
+    PARTIAL: new Map(),
+    UNPAID: new Map(),
+  };
+
+  for (const bill of bills) {
+    const paid = sumPayments(bill.payments);
+    const category = categorize(bill.totalAmount, paid);
+    const remaining = Math.max(0, getBalance(bill.totalAmount, paid));
+
+    counts[category] += 1;
+    amounts[category] += category === "PAID" ? bill.totalAmount : remaining;
+
+    let entry = byCustomer[category].get(bill.customer.id);
+    if (!entry) {
+      entry = {
+        id: bill.customer.id,
+        name: bill.customer.name,
+        phone: bill.customer.whatsappNumber,
+        invoices: [],
+      };
+      byCustomer[category].set(bill.customer.id, entry);
+      groups[category].push(entry);
+    }
+
+    entry.invoices.push({
+      billNumber: bill.billNumber,
+      billDate: bill.billDate.toISOString(),
+      totalAmount: bill.totalAmount,
+      paid,
+      remaining,
+      category,
+    });
+  }
+
+  for (const category of Object.keys(groups) as StatusCategory[]) {
+    groups[category].sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of groups[category]) {
+      entry.invoices.sort((a, b) => a.billDate.localeCompare(b.billDate));
+    }
+  }
+
+  return { counts, amounts, groups };
+}
+
