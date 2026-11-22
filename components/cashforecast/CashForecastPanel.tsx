@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   remaining,
@@ -183,13 +184,22 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
   const pick = (key: Status) => setPieFilter((prev) => (prev === key ? null : key));
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-        <header>
-          <h2 className="text-2xl font-bold text-slate-900">Cash forecast</h2>
-          <p className="text-slate-600">Sri Laxmi Stores</p>
+    <div className="rounded-2xl bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-3xl space-y-5 px-2 py-4 sm:px-4">
+        <header className="flex flex-col gap-1">
+          <Link
+            href="/"
+            className="inline-flex w-fit items-center text-sm font-medium text-stone-700 hover:text-stone-900 hover:underline"
+          >
+            ← Back to Udhaar Receivables
+          </Link>
+          <div className="mt-2">
+            <h1 className="text-2xl font-bold text-slate-900">Cash Forecast (Nakad Anumaan)</h1>
+            <p className="text-sm text-slate-600">{settings.shopName ?? "Sri Laxmi Stores"}</p>
+          </div>
         </header>
 
+        {/* 30/60/90 day toggle */}
         <div className="grid grid-cols-3 gap-2">
           {WINDOWS.map((d) => {
             const active = windowDays === d;
@@ -200,8 +210,8 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
                 aria-pressed={active}
                 onClick={() => setWindowDays(d)}
                 className={
-                  "min-h-11 rounded-xl px-3 font-medium " +
-                  (active ? "bg-indigo-600 text-white" : "bg-white border text-slate-700")
+                  "min-h-11 rounded-xl px-3 font-medium transition-colors " +
+                  (active ? "bg-indigo-600 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50")
                 }
               >
                 {d} days
@@ -210,6 +220,7 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
           })}
         </div>
 
+        {/* Cash shortfall alert banner */}
         <Verdict
           windowDays={windowDays}
           chosen={chosen}
@@ -218,15 +229,17 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
           hasTicked={hasTicked}
         />
 
-        <div className="bg-white rounded-2xl p-3 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-800 mb-2">
+        {/* Interactive forecast line chart */}
+        <div className="rounded-2xl bg-white p-3 shadow-sm">
+          <h2 className="mb-2 text-base font-semibold text-slate-800">
             Cash over the next {windowDays} days
           </h2>
           <ForecastChart points={points} scenarioPoints={scenarioPoints} windowDays={windowDays} />
         </div>
 
-        <div className="bg-white rounded-2xl p-3 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-800 mb-2">Invoices by status</h2>
+        {/* Invoices by status breakdown */}
+        <div className="rounded-2xl bg-white p-3 shadow-sm">
+          <h2 className="mb-2 text-base font-semibold text-slate-800">Invoices by status</h2>
           <StatusPie
             counts={counts}
             amounts={amounts}
@@ -236,8 +249,9 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
           />
         </div>
 
+        {/* What-if scenario list */}
         {openInvoices.length === 0 ? (
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-slate-700">
+          <div className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm">
             No money is owed to you right now.
           </div>
         ) : (
@@ -254,7 +268,7 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
           />
         )}
 
-        <div className="rounded-2xl bg-white p-4 text-sm text-slate-700">
+        <div className="rounded-2xl bg-white p-4 text-sm text-slate-700 shadow-sm">
           Cash today {rupees(settings.openingBalance)} · Coming in (unpaid invoices){" "}
           {rupees(comingIn)} · Bills in next 30 days {rupees(billsNext30)}
         </div>

@@ -4,9 +4,9 @@ import { dayToDate } from "@/lib/cashforecast/forecast";
 
 const money = (n: number) => (n < 0 ? "-" : "") + "\u20B9" + Math.abs(n).toLocaleString("en-IN");
 
-const icon = (s: Scenario) => (s.safe ? "\u2705" : "\u274C");
+const icon = (s: Scenario) => (s?.safe ? "\u2705" : "\u274C");
 const short = (s: Scenario) =>
-  s.safe ? "safe" : s.firstNegative ? `short on ${dayToDate(s.firstNegative.day)}` : "short";
+  s?.safe ? "safe" : s?.firstNegative ? `short on ${dayToDate(s.firstNegative.day)}` : "short";
 
 function joinNames(fullNames: string[]) {
   const firsts = fullNames.map((n) => n.split(" ")[0]);
@@ -33,16 +33,19 @@ interface VerdictProps {
 }
 
 export default function Verdict({ windowDays, chosen, all, tickedNames, hasTicked }: VerdictProps) {
-  const safe = chosen.safe;
+  const safe = chosen?.safe ?? true;
   const banner = safe
     ? "bg-emerald-50 border-emerald-300 text-emerald-900"
     : "bg-red-50 border-red-300 text-red-900";
 
-  const shortOn = chosen.firstNegative ? ` on ${dayToDate(chosen.firstNegative.day)}` : "";
+  const shortOn = chosen?.firstNegative ? ` on ${dayToDate(chosen.firstNegative.day)}` : "";
+
+  const lowestBal = chosen?.lowest?.balance ?? 0;
+  const lowestDay = chosen?.lowest?.day ?? 0;
 
   const mainText = safe
-    ? `You are safe for the next ${windowDays} days. Lowest cash: ${money(chosen.lowest.balance)} on ${dayToDate(chosen.lowest.day)}.`
-    : `Cash runs short${shortOn}. Lowest: ${money(chosen.lowest.balance)} on ${dayToDate(chosen.lowest.day)}.`;
+    ? `You are safe for the next ${windowDays} days. Lowest cash: ${money(lowestBal)} on ${dayToDate(lowestDay)}.`
+    : `Cash runs short${shortOn}. Lowest: ${money(lowestBal)} on ${dayToDate(lowestDay)}.`;
 
   const namesText = joinNames(tickedNames);
   const verdictSentence = safe
@@ -55,9 +58,9 @@ export default function Verdict({ windowDays, chosen, all, tickedNames, hasTicke
         <span aria-hidden="true">{safe ? "\u2705" : "\u274C"}</span> {mainText}
       </p>
 
-      {hasTicked && (
+      {hasTicked && all && (
         <p className="mt-2 text-sm">
-          {`30 days: ${icon(all[30])} ${short(all[30])} \u00B7 60 days: ${icon(all[60])} ${short(all[60])} \u00B7 90 days: ${icon(all[90])} ${short(all[90])}`}
+          {`30 days: ${all[30] ? icon(all[30]) + " " + short(all[30]) : ""} \u00B7 60 days: ${all[60] ? icon(all[60]) + " " + short(all[60]) : ""} \u00B7 90 days: ${all[90] ? icon(all[90]) + " " + short(all[90]) : ""}`}
         </p>
       )}
 

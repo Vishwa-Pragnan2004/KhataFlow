@@ -1,4 +1,4 @@
-import type { Bill, Customer, Invoice, Settings } from './forecast';
+import type { Bill, Customer, Invoice, Settings } from "./forecast";
 
 // Shape of one bill row as loaded from the database (no Prisma import here).
 export interface BillRow {
@@ -10,6 +10,15 @@ export interface BillRow {
   payments: { amount: number }[];
 }
 
+export interface ExpenseRow {
+  id: number;
+  title: string;
+  category?: string;
+  amount: number;
+  dueDate: Date;
+  paidOn: Date | null;
+}
+
 export interface InvoiceRef {
   id: number;
   billNumber: string;
@@ -17,24 +26,37 @@ export interface InvoiceRef {
   customerPhone: string;
 }
 
-// These are assumptions, not stored in the database; tune them.
+// Assumptions for forecast when customer delay/confidence isn't in DB yet.
 const DEFAULT_DELAY_DAYS = 3;
 const DEFAULT_CONF = 0.9;
 
-// KhataFlow has no cash-balance table, so these are sample settings to replace.
-const OPENING_BALANCE = 18000;
-const AVG_DAILY_CASH_SALES = 1250;
+const DEFAULT_OPENING_BALANCE = 25000;
+const DEFAULT_AVG_DAILY_CASH_SALES = 1250;
 
 const MS_PER_DAY = 86400000;
 
-export function toForecastInput(args: { bills: BillRow[]; todayStart: Date }): {
+export function toForecastInput(args: {
+  bills: BillRow[];
+  todayStart: Date;
+  expenses?: ExpenseRow[];
+  shopName?: string;
+  openingBalance?: number;
+  avgDailyCashSales?: number;
+}): {
   customers: Customer[];
   invoices: Invoice[];
   bills: Bill[];
   settings: Settings;
   invoiceRefs: InvoiceRef[];
 } {
-  const { bills: rows, todayStart } = args;
+  const {
+    bills: rows,
+    todayStart,
+    expenses = [],
+    shopName,
+    openingBalance,
+    avgDailyCashSales,
+  } = args;
 
   // One customer per distinct name, numeric ids 1..N in first-appearance order.
   const customers: Customer[] = [];
@@ -50,8 +72,8 @@ export function toForecastInput(args: { bills: BillRow[]; todayStart: Date }): {
 
   const invoices: Invoice[] = [];
   const invoiceRefs: InvoiceRef[] = [];
-  rows.forEach((row, index) => {
-    const id = index + 1;
+  rows.forEach((row) => {
+    const id = row.id;
     const paid = row.payments.reduce((sum, p) => sum + p.amount, 0);
     invoices.push({
       id,
@@ -68,12 +90,20 @@ export function toForecastInput(args: { bills: BillRow[]; todayStart: Date }): {
     });
   });
 
-  // KhataFlow has no outgoing-bill model, so there are no outgoing bills.
-  const bills: Bill[] = [];
+  // Map unpaid expenses to outgoing bills in the forecast timeline
+  const bills: Bill[] = expenses
+    .filter((e) => e.paidOn === null)
+    .map((e) => ({
+      id: e.id,
+      name: e.title,
+      amount: e.amount,
+      d: Math.max(0, Math.round((e.dueDate.getTime() - todayStart.getTime()) / MS_PER_DAY)),
+    }));
 
   const settings: Settings = {
-    openingBalance: OPENING_BALANCE,
-    avgDailyCashSales: AVG_DAILY_CASH_SALES,
+    openingBalance: openingBalance ?? DEFAULT_OPENING_BALANCE,
+    avgDailyCashSales: avgDailyCashSales ?? DEFAULT_AVG_DAILY_CASH_SALES,
+    shopName: shopName ?? "Sri Laxmi Stores",
   };
 
   return { customers, invoices, bills, settings, invoiceRefs };

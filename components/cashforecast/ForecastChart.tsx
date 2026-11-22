@@ -1,8 +1,17 @@
 "use client";
 
 import {
-  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ReferenceLine, ReferenceDot, ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine,
+  ReferenceDot,
+  ResponsiveContainer,
 } from "recharts";
 import { dayToDate } from "@/lib/cashforecast/forecast";
 
@@ -20,16 +29,24 @@ interface ForecastChartProps {
 }
 
 export default function ForecastChart({ points, scenarioPoints, windowDays }: ForecastChartProps) {
+  if (!points || points.length === 0) {
+    return (
+      <div className="rounded-2xl bg-white p-6 text-center text-slate-500 shadow-sm">
+        No forecast data available.
+      </div>
+    );
+  }
+
   const data = points.map((p, i) => ({
     day: p.day,
     baseline: p.balance,
-    scenario: scenarioPoints ? scenarioPoints[i].balance : null,
+    scenario: scenarioPoints && scenarioPoints[i] ? scenarioPoints[i].balance : null,
     belowZero: Math.min(p.balance, 0),
   }));
 
   const ticks = [...new Set([0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * (windowDays - 1))))];
 
-  const source = scenarioPoints || points;
+  const source = scenarioPoints && scenarioPoints.length > 0 ? scenarioPoints : points;
   const low = source.reduce((m, p) => (p.balance < m.balance ? p : m), source[0]);
 
   return (
@@ -46,7 +63,12 @@ export default function ForecastChart({ points, scenarioPoints, windowDays }: Fo
           />
           <YAxis
             width={60}
-            tickFormatter={(v: number) => (v === 0 ? "\u20B90" : (v < 0 ? "-\u20B9" : "\u20B9") + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(0) + "k" : Math.abs(v)))}
+            tickFormatter={(v: number) =>
+              v === 0
+                ? "\u20B90"
+                : (v < 0 ? "-\u20B9" : "\u20B9") +
+                  (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(0) + "k" : Math.abs(v))
+            }
           />
           <Tooltip
             labelFormatter={(d: unknown) => dayToDate(d as number)}
@@ -65,14 +87,16 @@ export default function ForecastChart({ points, scenarioPoints, windowDays }: Fo
             />
           )}
           <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="4 4" />
-          <ReferenceDot
-            x={low.day}
-            y={low.balance}
-            r={6}
-            fill="#dc2626"
-            stroke="#fff"
-            label={{ value: money(low.balance), position: "top", fill: "#dc2626", fontSize: 12 }}
-          />
+          {low && (
+            <ReferenceDot
+              x={low.day}
+              y={low.balance}
+              r={6}
+              fill="#dc2626"
+              stroke="#fff"
+              label={{ value: money(low.balance), position: "top", fill: "#dc2626", fontSize: 12 }}
+            />
+          )}
           <Legend verticalAlign="bottom" />
         </ComposedChart>
       </ResponsiveContainer>

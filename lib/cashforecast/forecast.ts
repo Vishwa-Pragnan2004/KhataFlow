@@ -23,6 +23,7 @@ export interface Bill {
 export interface Settings {
   openingBalance: number;
   avgDailyCashSales: number;
+  shopName?: string;
 }
 
 export interface Point {
