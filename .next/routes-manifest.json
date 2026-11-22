@@ -55,6 +55,18 @@
       "regex": "^/bill/new(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/bill/new(?:/)?$"
+    },
+    {
+      "page": "/forecast",
+      "regex": "^/forecast(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/forecast(?:/)?$"
+    },
+    {
+      "page": "/products",
+      "regex": "^/products(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/products(?:/)?$"
     }
   ],
   "dataRoutes": [],

@@ -12,10 +12,6 @@
     },
     "40b69ca4133e3990a1baef93d4b26a821dd419562c": {
       "workers": {
-        "app/bill/[id]/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        },
         "app/bill/new/page": {
           "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false
@@ -28,48 +24,6 @@
       "filename": "app/actions.ts",
       "exportedName": "recordPayment"
     },
-    "405ddb51875bd57869d288101f46b80b150556d0cc": {
-      "workers": {
-        "app/bill/[id]/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        },
-        "app/bill/new/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        }
-      },
-      "filename": "app/actions.ts",
-      "exportedName": "logReminder"
-    },
-    "401fc2d4c9b72e82178a0f1d4f51929b1bfcfcfd48": {
-      "workers": {
-        "app/bill/[id]/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        },
-        "app/bill/new/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        }
-      },
-      "filename": "app/actions.ts",
-      "exportedName": "getReminderWarning"
-    },
-    "401cf0eb0f4398a9e147602982dac76d8f1c54a1a8": {
-      "workers": {
-        "app/bill/[id]/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        },
-        "app/bill/new/page": {
-          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        }
-      },
-      "filename": "app/actions.ts",
-      "exportedName": "prepareReminder"
-    },
     "007fabea61f7b5dba29c290d5877470acc88f42b31": {
       "workers": {
         "app/bill/new/page": {
@@ -79,6 +33,26 @@
       },
       "filename": "app/actions.ts",
       "exportedName": "listCustomers"
+    },
+    "401cf0eb0f4398a9e147602982dac76d8f1c54a1a8": {
+      "workers": {
+        "app/bill/new/page": {
+          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/actions.ts",
+      "exportedName": "prepareReminder"
+    },
+    "401fc2d4c9b72e82178a0f1d4f51929b1bfcfcfd48": {
+      "workers": {
+        "app/bill/new/page": {
+          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/actions.ts",
+      "exportedName": "getReminderWarning"
     },
     "402f4e2f4b6c942dbd2dd813c318b206cde7d32e3b": {
       "workers": {
@@ -90,6 +64,16 @@
       "filename": "app/actions.ts",
       "exportedName": "createCustomer"
     },
+    "405ddb51875bd57869d288101f46b80b150556d0cc": {
+      "workers": {
+        "app/bill/new/page": {
+          "moduleId": "[project]/.next-internal/server/app/bill/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/actions.ts",
+      "exportedName": "logReminder"
+    },
     "40713459087b86eaa2c0510dd1516ad953c687cdf8": {
       "workers": {
         "app/bill/new/page": {
@@ -99,6 +83,46 @@
       },
       "filename": "app/actions.ts",
       "exportedName": "createBill"
+    },
+    "401fd61039e40d606fdc5c2e73f25c80fbf2b54954": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/products/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "updateProductPrice"
+    },
+    "4036aa3920d6eaa1439d649359af083b034570fcfc": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/products/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "saveProductPrice"
+    },
+    "40f2c2797d47d2aa2d6756b9465b508ce4fdd0b08b": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/products/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "deleteProduct"
+    },
+    "605e4061a683506470b89bc2d7d1ec9216f85e6099": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/products/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "createProduct"
     }
   },
   "edge": {},

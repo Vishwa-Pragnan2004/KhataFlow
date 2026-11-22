@@ -65,7 +65,7 @@ export default function CustomerPicker(props: CustomerPickerProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex min-h-14 w-full items-center rounded-xl border-2 border-stone-300 bg-white px-4 text-left text-lg"
+        className="flex h-12 w-full items-center rounded-xl border border-stone-300 bg-white px-4 text-left text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       >
         {selected ? (
           <span className="flex flex-col">
@@ -78,7 +78,7 @@ export default function CustomerPicker(props: CustomerPickerProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-xl">
+        <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg">
           <div className="p-2">
             <input
               type="text"
@@ -88,12 +88,12 @@ export default function CustomerPicker(props: CustomerPickerProps) {
               placeholder="Naam ya number likhiye"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-lg text-stone-900 focus:border-green-700 focus:outline-none"
+              className="h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           {filtered.length === 0 ? (
-            <p className="px-4 py-3 text-stone-500">No match found (Koi nahi mila)</p>
+            <p className="px-4 py-3 text-sm text-stone-500">No match found (Koi nahi mila)</p>
           ) : (
             <ul>
               {filtered.map((c) => (
@@ -101,10 +101,12 @@ export default function CustomerPicker(props: CustomerPickerProps) {
                   <button
                     type="button"
                     onClick={() => handleSelect(c)}
-                    className="flex min-h-14 w-full flex-col justify-center px-4 text-left hover:bg-stone-100"
+                    className={`flex w-full flex-col justify-center px-4 py-2.5 text-left text-sm text-stone-800 transition-colors duration-200 ${
+                      c.id === selectedId ? "bg-emerald-50 text-emerald-700 font-medium" : "hover:bg-emerald-50"
+                    }`}
                   >
-                    <span className="font-semibold text-stone-900">{c.name}</span>
-                    <span className="text-stone-500">{c.whatsappNumber}</span>
+                    <span className="font-semibold text-stone-800">{c.name}</span>
+                    <span className="text-sm text-stone-500">{c.whatsappNumber}</span>
                   </button>
                 </li>
               ))}
@@ -114,7 +116,7 @@ export default function CustomerPicker(props: CustomerPickerProps) {
           <button
             type="button"
             onClick={handleAddNew}
-            className="flex min-h-14 w-full items-center border-t border-stone-200 px-4 text-left font-semibold text-green-700"
+            className="flex min-h-14 w-full items-center border-t border-stone-200 px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition-colors duration-200 hover:bg-emerald-50"
           >
             + Add New Customer (+ Naya Customer)
           </button>

@@ -6,17 +6,18 @@
   ],
   "lowPriorityFiles": [],
   "rootMainFiles": [
-    "static/chunks/3v_59l1qr_8dp.js",
-    "static/chunks/331cmii2the74.js",
-    "static/chunks/442osjtgbgmto.js",
+    "static/chunks/310vm2bl3xxpt.js",
+    "static/chunks/1wnov70f88xjy.js",
     "static/chunks/39_j1bdzreq0m.js",
+    "static/chunks/442osjtgbgmto.js",
+    "static/chunks/0zrd_3qh8yem_.js",
     "static/chunks/turbopack-2u1d16houkiyo.js"
   ],
   "pages": {},
   "ampFirstPages": [],
   "rootMainFilesTree": {},
   "pagesChunkGroupBootstrapParams": {
-    "/bill/[id]/page": {"otherChunks":["static/chunks/3v_59l1qr_8dp.js","static/chunks/331cmii2the74.js","static/chunks/442osjtgbgmto.js","static/chunks/39_j1bdzreq0m.js"],"runtimeModuleIds":[94553]}
+    "/bill/[id]/page": {"otherChunks":["static/chunks/310vm2bl3xxpt.js","static/chunks/1wnov70f88xjy.js","static/chunks/39_j1bdzreq0m.js","static/chunks/442osjtgbgmto.js","static/chunks/0zrd_3qh8yem_.js"],"runtimeModuleIds":[94553]}
   },
   "chunkLoadingGlobal": "TURBOPACK"
 }

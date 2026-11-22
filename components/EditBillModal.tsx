@@ -68,7 +68,7 @@ export default function EditBillModal(props: EditBillModalProps) {
       <button
         type="button"
         onClick={openSheet}
-        className="min-h-14 w-full rounded-xl border border-stone-400 bg-white text-lg font-semibold text-stone-900"
+        className="inline-flex items-center self-start rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
       >
         Edit (Badlo)
       </button>

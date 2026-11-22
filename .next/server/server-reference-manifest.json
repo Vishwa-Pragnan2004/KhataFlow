@@ -99,6 +99,26 @@
       },
       "filename": "app/actions.ts",
       "exportedName": "createBill"
+    },
+    "40905a2f5c462ca510b18ad69de4274a1d32cc707b": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": 11427,
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "updateProductPrice"
+    },
+    "4095b6314296d3197f87c791e3af2ac8c19df5f3fa": {
+      "workers": {
+        "app/products/page": {
+          "moduleId": 11427,
+          "async": false
+        }
+      },
+      "filename": "app/products/actions.ts",
+      "exportedName": "saveProductPrice"
     }
   },
   "edge": {},

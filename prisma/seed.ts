@@ -301,6 +301,53 @@ async function main(): Promise<void> {
     console.log(`Seeded ${expenseSeeds.length} expenses.`);
   }
 
+  if ((await prisma.product.count()) === 0) {
+    const productSeeds: {
+      name: string;
+      nameHi: string | null;
+      category: string;
+      unit: "KG" | "L" | "PIECE";
+      pricePerUnit: number;
+    }[] = [
+      { name: "Dal Toor", nameHi: "Arhar Dal", category: "Pulses", unit: "KG", pricePerUnit: 150 },
+      { name: "Dal Moong", nameHi: "Moong Dal", category: "Pulses", unit: "KG", pricePerUnit: 130 },
+      { name: "Dal Chana", nameHi: "Chana Dal", category: "Pulses", unit: "KG", pricePerUnit: 95 },
+      { name: "Rajma", nameHi: "Rajma", category: "Pulses", unit: "KG", pricePerUnit: 160 },
+      { name: "Kala Chana", nameHi: "Kala Chana", category: "Pulses", unit: "KG", pricePerUnit: 90 },
+      { name: "Basmati Rice", nameHi: "Basmati Chawal", category: "Rice", unit: "KG", pricePerUnit: 110 },
+      { name: "Sona Masoori Rice", nameHi: "Sona Masoori Chawal", category: "Rice", unit: "KG", pricePerUnit: 60 },
+      { name: "Poha", nameHi: "Poha", category: "Rice", unit: "KG", pricePerUnit: 55 },
+      { name: "Suji (Rava)", nameHi: "Suji", category: "Flour", unit: "KG", pricePerUnit: 50 },
+      { name: "Wheat Flour (Atta)", nameHi: "Gehun ka Atta", category: "Flour", unit: "KG", pricePerUnit: 48 },
+      { name: "Maida", nameHi: "Maida", category: "Flour", unit: "KG", pricePerUnit: 42 },
+      { name: "Besan", nameHi: "Besan", category: "Flour", unit: "KG", pricePerUnit: 90 },
+      { name: "Sugar", nameHi: "Cheeni", category: "Staples", unit: "KG", pricePerUnit: 44 },
+      { name: "Salt", nameHi: "Namak", category: "Staples", unit: "KG", pricePerUnit: 25 },
+      { name: "Tea Powder", nameHi: "Chai Patti", category: "Beverages", unit: "KG", pricePerUnit: 480 },
+      { name: "Coffee Powder", nameHi: "Coffee", category: "Beverages", unit: "KG", pricePerUnit: 600 },
+      { name: "Refined Oil", nameHi: "Refined Tel", category: "Oil", unit: "L", pricePerUnit: 160 },
+      { name: "Mustard Oil", nameHi: "Sarson ka Tel", category: "Oil", unit: "L", pricePerUnit: 180 },
+      { name: "Groundnut Oil", nameHi: "Moongfali Tel", category: "Oil", unit: "L", pricePerUnit: 190 },
+      { name: "Ghee", nameHi: "Desi Ghee", category: "Dairy", unit: "KG", pricePerUnit: 640 },
+      { name: "Milk", nameHi: "Doodh", category: "Dairy", unit: "L", pricePerUnit: 66 },
+      { name: "Paneer", nameHi: "Paneer", category: "Dairy", unit: "KG", pricePerUnit: 400 },
+      { name: "Turmeric Powder", nameHi: "Haldi", category: "Spices", unit: "KG", pricePerUnit: 180 },
+      { name: "Red Chilli Powder", nameHi: "Lal Mirch", category: "Spices", unit: "KG", pricePerUnit: 220 },
+      { name: "Cumin Seeds", nameHi: "Jeera", category: "Spices", unit: "KG", pricePerUnit: 650 },
+      { name: "Garam Masala", nameHi: "Garam Masala", category: "Spices", unit: "KG", pricePerUnit: 700 },
+      { name: "Mustard Seeds", nameHi: "Rai", category: "Spices", unit: "KG", pricePerUnit: 160 },
+      { name: "Onion", nameHi: "Pyaz", category: "Vegetables", unit: "KG", pricePerUnit: 35 },
+      { name: "Potato", nameHi: "Aloo", category: "Vegetables", unit: "KG", pricePerUnit: 30 },
+      { name: "Tomato", nameHi: "Tamatar", category: "Vegetables", unit: "KG", pricePerUnit: 40 },
+      { name: "Biscuits (Packet)", nameHi: "Biscuit", category: "Snacks", unit: "PIECE", pricePerUnit: 30 },
+      { name: "Soap Bar", nameHi: "Sabun", category: "Household", unit: "PIECE", pricePerUnit: 40 },
+      { name: "Detergent Powder", nameHi: "Detergent", category: "Household", unit: "KG", pricePerUnit: 120 },
+    ];
+    await prisma.product.createMany({ data: productSeeds });
+    console.log(`Seeded ${productSeeds.length} products.`);
+  }
+
+
 
   const existingBills = await prisma.bill.count();
   if (existingBills > 0) {
