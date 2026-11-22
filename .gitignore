@@ -1,1 +1,11 @@
 node_modules/ 
+
+.next/
+tsconfig.tsbuildinfo
+next-env.d.ts
+prisma/dev.db
+prisma/dev.backup.db
+prisma/dev.db.before-random-dates.bak
+prisma/dev.db.before-inflow-sample.bak
+*.bak
+
