@@ -1,42 +1,12 @@
-{"timestamp":"00:00:04.539","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:07.600","source":"Server","level":"LOG","message":"○ Compiling / ..."}
-{"timestamp":"00:00:10.200","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:04:05.338","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:05:57.170","source":"Server","level":"LOG","message":"✓ Compiled in 188ms"}
-{"timestamp":"00:09:46.754","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:10:29.222","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:14:57.161","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:14:59.907","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:15:01.896","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:15:42.851","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:17:34.937","source":"Server","level":"LOG","message":"✓ Compiled in 124ms"}
-{"timestamp":"00:20:16.386","source":"Server","level":"LOG","message":"✓ Compiled in 1695ms"}
-{"timestamp":"00:21:18.535","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:23:35.513","source":"Server","level":"LOG","message":"✓ Compiled in 77ms"}
-{"timestamp":"00:23:35.909","source":"Server","level":"LOG","message":"✓ Compiled in 165ms"}
-{"timestamp":"00:33:52.992","source":"Server","level":"LOG","message":"✓ Compiled in 188ms"}
-{"timestamp":"00:34:06.540","source":"Server","level":"LOG","message":"✓ Compiled in 116ms"}
-{"timestamp":"00:34:34.126","source":"Server","level":"LOG","message":"✓ Compiled in 143ms"}
-{"timestamp":"00:34:37.957","source":"Server","level":"LOG","message":"✓ Compiled in 91ms"}
-{"timestamp":"00:36:34.208","source":"Server","level":"LOG","message":"✓ Compiled in 83ms"}
-{"timestamp":"00:36:35.080","source":"Server","level":"LOG","message":"✓ Compiled in 98ms"}
-{"timestamp":"00:37:06.812","source":"Browser","level":"ERROR","message":"./components/QuickBillForm.tsx:781:7\nError: Expected ',', got '{'\n  779 |       </div>\n  780 |\n> 781 |       {/* Right column: summary and actions */}\n      |       ^\n  782 |       <div className=\"flex flex-col gap-5 lg:sticky lg:top-6\">\n  783 |         {/* Error message */}\n  784 |         {error && (\n\nParsing ecmascript source code failed\n\nImport trace:\n  Server Component:\n    ./components/QuickBillForm.tsx\n    ./app/bill/new/page.tsx "}
-{"timestamp":"00:37:06.815","source":"Server","level":"ERROR","message":"[browser] \"./components/QuickBillForm.tsx:781:7\\nError: Expected ',', got '{'\\n  779 |       </div>\\n  780 |\\n> 781 |       {/* Right column: summary and actions */}\\n      |       ^\\n  782 |       <div className=\\\"flex flex-col gap-5 lg:sticky lg:top-6\\\">\\n  783 |         {/* Error message */}\\n  784 |         {error && (\\n\\nParsing ecmascript source code failed\\n\\nImport trace:\\n  Server Component:\\n    ./components/QuickBillForm.tsx\\n    ./app/bill/new/page.tsx\" \"\""}
-{"timestamp":"00:37:06.815","source":"Browser","level":"ERROR","message":"./components/QuickBillForm.tsx:781:7\nError: Expected ',', got '{'\n  779 |       </div>\n  780 |\n> 781 |       {/* Right column: summary and actions */}\n      |       ^\n  782 |       <div className=\"flex flex-col gap-5 lg:sticky lg:top-6\">\n  783 |         {/* Error message */}\n  784 |         {error && (\n\nParsing ecmascript source code failed\n\nImport trace:\n  Server Component:\n    ./components/QuickBillForm.tsx\n    ./app/bill/new/page.tsx "}
-{"timestamp":"00:37:06.816","source":"Server","level":"ERROR","message":"[browser] \"./components/QuickBillForm.tsx:781:7\\nError: Expected ',', got '{'\\n  779 |       </div>\\n  780 |\\n> 781 |       {/* Right column: summary and actions */}\\n      |       ^\\n  782 |       <div className=\\\"flex flex-col gap-5 lg:sticky lg:top-6\\\">\\n  783 |         {/* Error message */}\\n  784 |         {error && (\\n\\nParsing ecmascript source code failed\\n\\nImport trace:\\n  Server Component:\\n    ./components/QuickBillForm.tsx\\n    ./app/bill/new/page.tsx\" \"\""}
-{"timestamp":"00:37:06.816","source":"Browser","level":"ERROR","message":"./components/QuickBillForm.tsx:776:7\nError: Expected ',', got '{'\n  774 |\n  775 |\n> 776 |       {/* Add customer sheet */}\n      |       ^\n  777 |       <AddCustomerSheet\n  778 |         open={isSheetOpen}\n  779 |         onClose={() => setIsSheetOpen(false)}\n\nParsing ecmascript source code failed\n\nImport trace:\n  Server Component:\n    ./components/QuickBillForm.tsx\n    ./app/bill/new/page.tsx "}
-{"timestamp":"00:37:06.816","source":"Server","level":"ERROR","message":"[browser] \"./components/QuickBillForm.tsx:776:7\\nError: Expected ',', got '{'\\n  774 |\\n  775 |\\n> 776 |       {/* Add customer sheet */}\\n      |       ^\\n  777 |       <AddCustomerSheet\\n  778 |         open={isSheetOpen}\\n  779 |         onClose={() => setIsSheetOpen(false)}\\n\\nParsing ecmascript source code failed\\n\\nImport trace:\\n  Server Component:\\n    ./components/QuickBillForm.tsx\\n    ./app/bill/new/page.tsx\" \"\""}
-{"timestamp":"00:37:06.816","source":"Browser","level":"ERROR","message":"./components/QuickBillForm.tsx:783:7\nError: Expected ',', got '{'\n  781 |       </div>\n  782 |\n> 783 |       {/* Right column: summary and actions */}\n      |       ^\n  784 |       <div className=\"flex flex-col gap-5 lg:sticky lg:top-6\">\n  785 |         {/* Error message */}\n  786 |         {error && (\n\nParsing ecmascript source code failed\n\nImport trace:\n  Server Component:\n    ./components/QuickBillForm.tsx\n    ./app/bill/new/page.tsx "}
-{"timestamp":"00:37:06.817","source":"Server","level":"ERROR","message":"[browser] \"./components/QuickBillForm.tsx:783:7\\nError: Expected ',', got '{'\\n  781 |       </div>\\n  782 |\\n> 783 |       {/* Right column: summary and actions */}\\n      |       ^\\n  784 |       <div className=\\\"flex flex-col gap-5 lg:sticky lg:top-6\\\">\\n  785 |         {/* Error message */}\\n  786 |         {error && (\\n\\nParsing ecmascript source code failed\\n\\nImport trace:\\n  Server Component:\\n    ./components/QuickBillForm.tsx\\n    ./app/bill/new/page.tsx\" \"\""}
-{"timestamp":"00:37:06.817","source":"Browser","level":"ERROR","message":"./components/QuickBillForm.tsx:784:7\nError: Expected ',', got '{'\n  782 |       </div>\n  783 |\n> 784 |       {/* Right column: summary and actions */}\n      |       ^\n  785 |       <div className=\"flex flex-col gap-5 lg:sticky lg:top-6\">\n  786 |         {/* Error message */}\n  787 |         {error && (\n\nParsing ecmascript source code failed\n\nImport trace:\n  Server Component:\n    ./components/QuickBillForm.tsx\n    ./app/bill/new/page.tsx "}
-{"timestamp":"00:37:06.817","source":"Server","level":"ERROR","message":"[browser] \"./components/QuickBillForm.tsx:784:7\\nError: Expected ',', got '{'\\n  782 |       </div>\\n  783 |\\n> 784 |       {/* Right column: summary and actions */}\\n      |       ^\\n  785 |       <div className=\\\"flex flex-col gap-5 lg:sticky lg:top-6\\\">\\n  786 |         {/* Error message */}\\n  787 |         {error && (\\n\\nParsing ecmascript source code failed\\n\\nImport trace:\\n  Server Component:\\n    ./components/QuickBillForm.tsx\\n    ./app/bill/new/page.tsx\" \"\""}
-{"timestamp":"00:40:24.189","source":"Server","level":"LOG","message":"✓ Compiled in 133ms"}
-{"timestamp":"00:45:20.197","source":"Server","level":"LOG","message":"✓ Compiled in 121ms"}
-{"timestamp":"00:45:21.049","source":"Server","level":"LOG","message":"✓ Compiled in 101ms"}
-{"timestamp":"00:45:28.446","source":"Server","level":"LOG","message":"✓ Compiled in 138ms"}
-{"timestamp":"00:48:23.632","source":"Server","level":"LOG","message":"✓ Compiled in 83ms"}
-{"timestamp":"00:50:01.962","source":"Server","level":"LOG","message":"✓ Compiled in 74ms"}
-{"timestamp":"00:50:06.520","source":"Server","level":"LOG","message":"✓ Compiled in 67ms"}
-{"timestamp":"00:50:08.356","source":"Server","level":"LOG","message":"✓ Compiled in 75ms"}
-{"timestamp":"00:50:17.045","source":"Server","level":"LOG","message":"✓ Compiled in 75ms"}
-{"timestamp":"01:03:21.015","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:00:08.377","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:13.122","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:07:05.017","source":"Server","level":"LOG","message":"✓ Compiled in 5.6s"}
+{"timestamp":"00:07:19.768","source":"Server","level":"LOG","message":"✓ Compiled in 229ms"}
+{"timestamp":"00:07:23.979","source":"Server","level":"LOG","message":"✓ Compiled in 458ms"}
+{"timestamp":"00:08:03.057","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:25:10.889","source":"Server","level":"LOG","message":"✓ Compiled in 98ms"}
+{"timestamp":"00:29:57.551","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:40:58.515","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:42:43.746","source":"Server","level":"LOG","message":"✓ Compiled in 93ms"}
+{"timestamp":"00:47:05.439","source":"Server","level":"LOG","message":"✓ Compiled in 93ms"}
+{"timestamp":"00:49:31.715","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}

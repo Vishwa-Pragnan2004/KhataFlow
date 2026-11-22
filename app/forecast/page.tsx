@@ -12,6 +12,8 @@ import {
   type ForecastInput,
   type Scenario,
 } from "@/lib/forecast";
+import ForecastCharts from "@/components/forecast/ForecastCharts";
+
 
 export const dynamic = "force-dynamic";
 
@@ -130,17 +132,24 @@ export default async function ForecastPage({
     <main className="min-h-screen bg-stone-100 text-stone-900">
       {/* Header panel */}
       <header className="bg-stone-900 px-6 py-8 text-white">
-        <div className="mx-auto max-w-6xl">
-          <Link href="/" className="text-sm text-amber-300 underline">
-            Back to Udhaar list
-          </Link>
-          <h1 className="mt-3 text-3xl font-bold">Cash Forecast (Nakad Anumaan)</h1>
-          <p className="mt-2 text-stone-300">
-            Next 90 days, built from unpaid bills and upcoming expenses
-          </p>
-          <p className="mt-1 text-xs text-stone-400">
-            Opening cash is sample data: {formatRupees(OPENING_CASH)}
-          </p>
+        <div className="mx-auto max-w-6xl flex items-start gap-6">
+          <div className="flex h-48 w-48 shrink-0 items-center justify-center rounded-2xl bg-white/5 p-2">
+            <img src="/mascot.png" alt="KhataFlow mascot" className="h-full w-full object-contain" />
+          </div>
+          <div className="flex min-w-0 flex-col gap-2">
+            <Link href="/" className="text-sm text-amber-300 underline">
+              Back to Udhaar list
+            </Link>
+            <div className="flex items-center gap-3">
+              <h1 className="mt-3 text-3xl font-bold">Cash Forecast (Nakad Anumaan)</h1>
+            </div>
+            <p className="mt-2 text-stone-300">
+              Next 90 days, built from unpaid bills and upcoming expenses
+            </p>
+            <p className="mt-1 text-xs text-stone-400">
+              Opening cash is sample data: {formatRupees(OPENING_CASH)}
+            </p>
+          </div>
         </div>
       </header>
 
@@ -182,6 +191,13 @@ export default async function ForecastPage({
             <p className="font-semibold">Cash stays positive for 90 days.</p>
           </div>
         )}
+
+        <ForecastCharts
+          buckets={forecast.buckets}
+          lowestCash={forecast.lowestCash}
+          outflowItems={forecast.outflowItems}
+        />
+
 
         {/* Weekly projection */}
         <section className="rounded-md bg-white p-6 shadow-sm">
