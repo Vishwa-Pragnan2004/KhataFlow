@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const money = (n: number) => (n < 0 ? "-" : "") + "\u20B9" + Math.abs(n).toLocaleString("en-IN");
 
@@ -13,20 +13,59 @@ const SLICES: { key: StatusKey; name: string; color: string; icon: string }[] = 
   { key: "UNPAID", name: "Unpaid", color: "#dc2626", icon: "\u274C" },
 ];
 
-interface StatusPieProps {
-  counts: Record<StatusKey, number>;
-  amounts: Record<StatusKey, number>;
+export interface PieInvoice {
+  id: number;
+  customerName: string;
+  customerPhone: string;
+  status: StatusKey;
+  owed: number;
   total: number;
+}
+
+interface StatusPieProps {
+  invoices: PieInvoice[];
+  selected: number[];
   pieFilter: StatusKey | null;
   onPick: (key: StatusKey) => void;
 }
 
-export default function StatusPie({ counts, amounts, total, pieFilter, onPick }: StatusPieProps) {
+export default function StatusPie({ invoices, selected, pieFilter, onPick }: StatusPieProps) {
   const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // When a person is ticked (selected), their invoice is treated as PAID in the scenario.
+  const scenarioInvoices = useMemo(
+    () =>
+      invoices.map((inv) =>
+        selected.includes(inv.id) ? { ...inv, status: "PAID" as StatusKey, owed: 0 } : inv,
+      ),
+    [invoices, selected],
+  );
+
+  const counts = useMemo(() => {
+    const c: Record<StatusKey, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
+    scenarioInvoices.forEach((inv) => {
+      c[inv.status] += 1;
+    });
+    return c;
+  }, [scenarioInvoices]);
+
+  const amounts = useMemo(() => {
+    const a: Record<StatusKey, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
+    scenarioInvoices.forEach((inv) => {
+      if (inv.status === "PAID") a.PAID += inv.total;
+      else a[inv.status] += inv.owed;
+    });
+    return a;
+  }, [scenarioInvoices]);
+
+  const total = scenarioInvoices.length;
+
+  const byStatus = useMemo(() => {
+    const map: Record<StatusKey, PieInvoice[]> = { PAID: [], PARTIAL: [], UNPAID: [] };
+    scenarioInvoices.forEach((inv) => map[inv.status].push(inv));
+    return map;
+  }, [scenarioInvoices]);
 
   const pieData = SLICES.map((s) => ({ ...s, value: counts[s.key] })).filter((s) => s.value > 0);
 
@@ -38,46 +77,90 @@ export default function StatusPie({ counts, amounts, total, pieFilter, onPick }:
 
   const activeName = SLICES.find((s) => s.key === pieFilter)?.name;
 
+  if (!mounted) {
+    return (
+      <div className="flex h-[400px] w-full items-center justify-center rounded-2xl bg-slate-50 p-4 text-sm text-slate-400">
+        Loading chart...
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="relative mx-auto h-[220px] w-full min-w-0 max-w-[280px]">
-        {mounted ? (
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
-            <PieChart>
-              <Pie
-                data={pieData.length > 0 ? pieData : [{ name: "No invoices", value: 1, key: "EMPTY" as StatusKey, color: "#e2e8f0", icon: "" }]}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={65}
-                outerRadius={95}
-                paddingAngle={pieData.length > 1 ? 3 : 0}
-                onClick={(entry: { key?: StatusKey }) => {
-                  if (entry?.key && entry.key !== ("EMPTY" as StatusKey)) {
-                    onPick(entry.key);
-                  }
+      <div className="relative mx-auto h-[240px] w-full min-w-0 max-w-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={
+                pieData.length > 0
+                  ? pieData
+                  : [{ name: "No invoices", value: 1, key: "EMPTY" as StatusKey, color: "#e2e8f0", icon: "" }]
+              }
+              dataKey="value"
+              nameKey="name"
+              innerRadius={65}
+              outerRadius={100}
+              paddingAngle={pieData.length > 1 ? 3 : 0}
+              onClick={(entry: { key?: StatusKey }) => {
+                if (entry?.key && entry.key !== ("EMPTY" as StatusKey)) {
+                  onPick(entry.key);
+                }
+              }}
+            >
+              {pieData.length > 0 ? (
+                pieData.map((s) => (
+                  <Cell
+                    key={s.key}
+                    fill={s.color}
+                    opacity={pieFilter && pieFilter !== s.key ? 0.35 : 1}
+                    stroke={pieFilter === s.key ? "#1e1b4b" : "#ffffff"}
+                    strokeWidth={pieFilter === s.key ? 2 : 1}
+                    cursor="pointer"
+                  />
+                ))
+              ) : (
+                <Cell key="empty" fill="#e2e8f0" stroke="none" />
+              )}
+            </Pie>
+            {pieData.length > 0 && (
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  const entry = payload[0].payload as (typeof SLICES)[number] & { value: number };
+                  const people = byStatus[entry.key];
+                  return (
+                    <div className="max-w-xs rounded-xl border border-stone-200 bg-white p-3 shadow-lg">
+                      <p className="font-semibold text-stone-900">
+                        {entry.icon} {entry.name} ({entry.value} {entry.value === 1 ? "invoice" : "invoices"})
+                      </p>
+                      <p className="text-sm text-stone-600">
+                        {entry.key === "PAID"
+                          ? `${money(amounts.PAID)} collected`
+                          : `${money(amounts[entry.key])} to collect`}
+                      </p>
+                      {people.length > 0 && (
+                        <ul className="mt-2 space-y-1 border-t border-stone-100 pt-2">
+                          {people.slice(0, 12).map((p) => (
+                            <li key={p.id} className="text-xs text-stone-700">
+                              <span className="font-medium">{p.customerName}</span>
+                              {p.customerPhone ? ` · ${p.customerPhone}` : ""}
+                              <span className="text-stone-500">
+                                {" "}— {money(p.status === "PAID" ? p.total : p.owed)}
+                              </span>
+                            </li>
+                          ))}
+                          {people.length > 12 && (
+                            <li className="text-xs text-stone-400">+{people.length - 12} more…</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                  );
                 }}
-              >
-                {pieData.length > 0 ? (
-                  pieData.map((s) => (
-                    <Cell
-                      key={s.key}
-                      fill={s.color}
-                      opacity={pieFilter && pieFilter !== s.key ? 0.35 : 1}
-                      stroke={pieFilter === s.key ? "#1e1b4b" : "#ffffff"}
-                      strokeWidth={pieFilter === s.key ? 2 : 1}
-                    />
-                  ))
-                ) : (
-                  <Cell key="empty" fill="#e2e8f0" stroke="none" />
-                )}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
-            Loading chart...
-          </div>
-        )}
+              />
+            )}
+          </PieChart>
+        </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-3xl font-bold text-gray-900">{total}</span>
           <span className="text-xs font-medium text-gray-500">invoices</span>

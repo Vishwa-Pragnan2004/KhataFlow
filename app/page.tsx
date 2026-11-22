@@ -54,8 +54,8 @@ export default async function DashboardPage({
   const query = (params.q ?? "").trim();
   const initialTab = params.tab === "forecast" ? "forecast" : "receivables";
 
-  // Load all bills from shared Prisma store
-  const bills = await prisma.bill.findMany({
+  // Load all bills from shared Prisma store (exclude DRAFT/CANCELLED for forecast)
+  const allBills = await prisma.bill.findMany({
     include: {
       customer: { select: { id: true, name: true, whatsappNumber: true } },
       payments: { select: { amount: true } },
@@ -63,6 +63,11 @@ export default async function DashboardPage({
     },
     orderBy: { id: "desc" },
   });
+
+  // Forecast only uses non-draft, non-cancelled bills
+  const forecastBills = allBills.filter(
+    (b) => b.status !== "DRAFT" && b.status !== "CANCELLED"
+  );
 
   // Load upcoming shop expenses for the forecast engine
   const rawExpenses = await prisma.expense.findMany({
@@ -85,16 +90,16 @@ export default async function DashboardPage({
   todayStart.setHours(0, 0, 0, 0);
 
   const forecastInput = toForecastInput({
-    bills,
+    bills: forecastBills,
     expenses: rawExpenses,
     todayStart,
     shopName: shop?.name ?? "Sri Laxmi Stores",
     openingBalance: 25000,
   });
 
-  const lastSentById = new Map(bills.map((b) => [b.id, b.reminders[0]?.sentAt ?? null]));
+  const lastSentById = new Map(allBills.map((b) => [b.id, b.reminders[0]?.sentAt ?? null]));
   const editById = new Map(
-    bills.map((b) => [
+    allBills.map((b) => [
       b.id,
       {
         customerName: b.customer.name,
@@ -107,7 +112,7 @@ export default async function DashboardPage({
   );
 
   const all = buildUdhaarRows(
-    bills.map((b) => ({
+    allBills.map((b) => ({
       id: b.id,
       billNumber: b.billNumber,
       customerName: b.customer.name,
@@ -124,9 +129,7 @@ export default async function DashboardPage({
   const receivablesView = (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-stone-900">Udhaar Receivables (Baki Khata)</h1>
-        </div>
+        <h1 className="text-2xl font-bold text-stone-900">Udhaar Receivables (Baki Khata)</h1>
         <Link
           href="/bill/new"
           className="flex min-h-16 w-full items-center justify-center rounded-xl bg-green-700 text-lg font-semibold text-white shadow-sm hover:bg-green-800"

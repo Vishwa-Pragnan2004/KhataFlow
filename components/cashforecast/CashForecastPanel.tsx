@@ -13,7 +13,7 @@ import {
   type Settings,
 } from "@/lib/cashforecast/forecast";
 import ForecastChart from "./ForecastChart";
-import StatusPie from "./StatusPie";
+import StatusPie, { type PieInvoice } from "./StatusPie";
 import WhatIfList from "./WhatIfList";
 import Verdict from "./Verdict";
 
@@ -42,7 +42,7 @@ type OpenRow = {
   daysLate: number;
 };
 
-const rupees = (n: number) => "₹" + n.toLocaleString("en-IN");
+const rupees = (n: number) => "\u20B9" + n.toLocaleString("en-IN");
 
 const WINDOWS = [30, 60, 90];
 
@@ -106,6 +106,23 @@ export default function CashForecastPanel({
     [scenarioSource]
   );
 
+  // Pie chart invoice list with customer info for tooltips
+  const pieInvoices = useMemo<PieInvoice[]>(
+    () =>
+      invoices.map((inv) => {
+        const ref = invoiceRefs.find((r) => r.id === inv.id);
+        return {
+          id: inv.id,
+          customerName: ref?.customerName ?? "",
+          customerPhone: ref?.customerPhone ?? "",
+          status: invoiceStatus(inv),
+          owed: remaining(inv),
+          total: inv.total,
+        };
+      }),
+    [invoices, invoiceRefs]
+  );
+
   const openInvoices = useMemo<OpenRow[]>(
     () =>
       invoices
@@ -128,26 +145,6 @@ export default function CashForecastPanel({
     else rows = openInvoices;
     return [...rows].sort((a, b) => b.daysLate - a.daysLate);
   }, [openInvoices, pieFilter]);
-
-  const counts = useMemo(() => {
-    const c: Record<Status, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
-    invoices.forEach((inv) => {
-      c[invoiceStatus(inv)] += 1;
-    });
-    return c;
-  }, [invoices]);
-
-  const amounts = useMemo(() => {
-    const a: Record<Status, number> = { PAID: 0, PARTIAL: 0, UNPAID: 0 };
-    invoices.forEach((inv) => {
-      const s = invoiceStatus(inv);
-      if (s === "PAID") a.PAID += inv.total;
-      else a[s] += remaining(inv);
-    });
-    return a;
-  }, [invoices]);
-
-  const total = invoices.length;
 
   const ticked = useMemo(
     () => openInvoices.filter((r) => selected.includes(r.id)),
@@ -189,6 +186,10 @@ export default function CashForecastPanel({
 
   const pick = (key: Status) => setPieFilter((prev) => (prev === key ? null : key));
 
+  // Baseline vs scenario verdict for the selected window
+  const baseVerdict = useMemo(() => summarize(baseline90, windowDays), [baseline90, windowDays]);
+  const scenarioVerdict = useMemo(() => summarize(scenario90, windowDays), [scenario90, windowDays]);
+
   return (
     <div className="flex flex-col gap-5 text-slate-900">
       <header className="flex flex-col gap-1">
@@ -229,30 +230,52 @@ export default function CashForecastPanel({
         })}
       </div>
 
-      {/* Cash Shortfall Alert Banner */}
+      {/* Baseline vs Scenario Verdict */}
       <Verdict
         windowDays={windowDays}
         chosen={chosen}
         all={all}
         tickedNames={tickedNames}
         hasTicked={hasTicked}
+        baseVerdict={baseVerdict}
+        scenarioVerdict={scenarioVerdict}
+        tickedTotal={tickedTotal}
       />
 
       {/* Interactive Forecast Line Chart */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-semibold text-slate-800">
-          Cash balance over next {windowDays} days
-        </h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-base font-semibold text-slate-800">
+            Cash balance over next {windowDays} days
+          </h3>
+          {hasTicked && (
+            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+              +{rupees(tickedTotal)} from {tickedCount} customers
+            </span>
+          )}
+        </div>
         <ForecastChart points={points} scenarioPoints={scenarioPoints} windowDays={windowDays} />
+        <p className="mt-2 text-xs text-slate-500">
+          <span className="font-medium text-indigo-600">Indigo line</span> = baseline (no ticked payments)
+          {hasTicked && (
+            <>
+              {" · "}
+              <span className="font-medium text-green-600">Green dashed line</span> = with ticked payments
+              {" · "}
+              <span className="font-medium text-green-700">Green shaded area</span> = extra cash from ticking
+            </>
+          )}
+        </p>
       </div>
 
-      {/* Invoices by Status Pie / Donut */}
+      {/* Invoices by Status Pie / Donut — changes when ticking checkboxes */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-        <h3 className="mb-2 text-base font-semibold text-slate-800">Invoices by status</h3>
+        <h3 className="mb-2 text-base font-semibold text-slate-800">
+          Invoices by status {hasTicked && <span className="text-sm font-normal text-green-700">(scenario: ticked = paid)</span>}
+        </h3>
         <StatusPie
-          counts={counts}
-          amounts={amounts}
-          total={total}
+          invoices={pieInvoices}
+          selected={selected}
           pieFilter={pieFilter}
           onPick={pick}
         />

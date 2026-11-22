@@ -4,6 +4,8 @@ node_modules/
 # Next.js build output and cache
 .next/
 out/
+*.tsbuildinfo
+next-env.d.ts
 
 # Codebenders scratch and dev files
 .codebenders/

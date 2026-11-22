@@ -30,9 +30,21 @@ interface VerdictProps {
   all: Record<30 | 60 | 90, Scenario>;
   tickedNames: string[];
   hasTicked: boolean;
+  baseVerdict: Scenario;
+  scenarioVerdict: Scenario;
+  tickedTotal: number;
 }
 
-export default function Verdict({ windowDays, chosen, all, tickedNames, hasTicked }: VerdictProps) {
+export default function Verdict({
+  windowDays,
+  chosen,
+  all,
+  tickedNames,
+  hasTicked,
+  baseVerdict,
+  scenarioVerdict,
+  tickedTotal,
+}: VerdictProps) {
   const safe = chosen?.safe ?? true;
   const banner = safe
     ? "bg-emerald-50 border-emerald-300 text-emerald-900"
@@ -52,20 +64,64 @@ export default function Verdict({ windowDays, chosen, all, tickedNames, hasTicke
     ? `you are safe for the next ${windowDays} days`
     : `cash still runs short${shortOn}`;
 
+  // Baseline status (before ticking)
+  const baseSafe = baseVerdict?.safe ?? true;
+  const baseShortOn = baseVerdict?.firstNegative
+    ? ` on ${dayToDate(baseVerdict.firstNegative.day)}`
+    : "";
+
   return (
     <div role="status" className={`rounded-2xl border p-4 ${banner}`}>
-      <p className="text-lg font-semibold">
-        <span aria-hidden="true">{safe ? "\u2705" : "\u274C"}</span> {mainText}
-      </p>
-
-      {hasTicked && all && (
-        <p className="mt-2 text-sm">
-          {`30 days: ${all[30] ? icon(all[30]) + " " + short(all[30]) : ""} \u00B7 60 days: ${all[60] ? icon(all[60]) + " " + short(all[60]) : ""} \u00B7 90 days: ${all[90] ? icon(all[90]) + " " + short(all[90]) : ""}`}
-        </p>
+      {/* Baseline status (before ticking) */}
+      {!hasTicked && (
+        <>
+          <p className="text-lg font-semibold">
+            <span aria-hidden="true">{baseSafe ? "\u2705" : "\u274C"}</span>{" "}
+            {baseSafe
+              ? `You are safe for the next ${windowDays} days.`
+              : `Cash runs short${baseShortOn}.`}
+          </p>
+          <p className="mt-1 text-sm">
+            Tick an overdue or unpaid person below to see how much safer you become.
+          </p>
+        </>
       )}
 
-      {hasTicked && namesText && (
-        <p className="mt-1 text-sm">{`If ${namesText} pay you, then ${verdictSentence}.`}</p>
+      {/* Scenario status (after ticking) */}
+      {hasTicked && (
+        <>
+          <p className="text-lg font-semibold">
+            <span aria-hidden="true">{safe ? "\u2705" : "\u274C"}</span> {mainText}
+          </p>
+
+          {tickedTotal > 0 && (
+            <p className="mt-1 text-sm">
+              {`If ${namesText || "these customers"} pay you ${money(tickedTotal)}, ${verdictSentence}.`}
+            </p>
+          )}
+
+          {/* Show improvement from baseline to scenario */}
+          {baseVerdict && !baseVerdict.safe && scenarioVerdict?.safe && (
+            <p className="mt-2 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-900">
+              {"\u{1F7E2} Ticking these payments makes you safe for the next {windowDays} days (was short{baseShortOn})."}
+            </p>
+          )}
+          {baseVerdict && !baseVerdict.safe && scenarioVerdict && !scenarioVerdict.safe && scenarioVerdict.firstNegative && (
+            <p className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900">
+              {`\u{1F7E1} Still short${shortOn}, but the shortfall is smaller. Lowest cash improved from ${money(baseVerdict.lowest.balance)} to ${money(scenarioVerdict.lowest.balance)}.`}
+            </p>
+          )}
+
+          {all && (
+            <p className="mt-2 text-sm">
+              {`30 days: ${all[30] ? icon(all[30]) + " " + short(all[30]) : ""} \u00B7 60 days: ${all[60] ? icon(all[60]) + " " + short(all[60]) : ""} \u00B7 90 days: ${all[90] ? icon(all[90]) + " " + short(all[90]) : ""}`}
+            </p>
+          )}
+
+          {namesText && (
+            <p className="mt-1 text-sm">{`If ${namesText} pay you, then ${verdictSentence}.`}</p>
+          )}
+        </>
       )}
     </div>
   );
