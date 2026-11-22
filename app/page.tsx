@@ -5,6 +5,9 @@ import { formatShortDate, toInputDate } from "@/lib/dates";
 import { lastRemindedLabel } from "@/lib/reminders";
 import RecordPaymentModal from "@/components/RecordPaymentModal";
 import EditBillModal from "@/components/EditBillModal";
+import MainDashboardTabs from "@/components/MainDashboardTabs";
+import CashForecastPanel from "@/components/cashforecast/CashForecastPanel";
+import { toForecastInput } from "@/lib/cashforecast/fromDb";
 import {
   FILTER_STATUSES,
   type FilterStatus,
@@ -41,23 +44,54 @@ function chipClass(active: boolean): string {
     : `${base} border border-stone-300 bg-white text-stone-800`;
 }
 
-export default async function UdhaarListPage({
+export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; tab?: string }>;
 }) {
   const params = await searchParams;
   const statuses = parseStatusParam(params.status);
   const query = (params.q ?? "").trim();
+  const initialTab = params.tab === "forecast" ? "forecast" : "receivables";
 
+  // Load all bills from shared Prisma store
   const bills = await prisma.bill.findMany({
     include: {
-      customer: { select: { name: true, whatsappNumber: true } },
+      customer: { select: { id: true, name: true, whatsappNumber: true } },
       payments: { select: { amount: true } },
       reminders: { select: { sentAt: true }, orderBy: { sentAt: "desc" }, take: 1 },
     },
     orderBy: { id: "desc" },
   });
+
+  // Load upcoming shop expenses for the forecast engine
+  const rawExpenses = await prisma.expense.findMany({
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      amount: true,
+      dueDate: true,
+      paidOn: true,
+    },
+    orderBy: { dueDate: "asc" },
+  });
+
+  const shop = await prisma.shop.findFirst({
+    select: { name: true },
+  });
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const forecastInput = toForecastInput({
+    bills,
+    expenses: rawExpenses,
+    todayStart,
+    shopName: shop?.name ?? "Sri Laxmi Stores",
+    openingBalance: 25000,
+  });
+
   const lastSentById = new Map(bills.map((b) => [b.id, b.reminders[0]?.sentAt ?? null]));
   const editById = new Map(
     bills.map((b) => [
@@ -85,36 +119,30 @@ export default async function UdhaarListPage({
   );
   const summary = summarize(all);
   const shown = sortRows(filterRows(all, statuses, query));
-
   const allActive = FILTER_STATUSES.every((s) => statuses.includes(s));
 
-  return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-4">
-        <h1 className="text-2xl font-bold">Udhaar Receivables (Baki Khata)</h1>
-        <Link
-          href="/forecast"
-          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100"
-        >
-          Cash Forecast (Nakad Anumaan)
-        </Link>
-
+  const receivablesView = (
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-stone-900">Udhaar Receivables (Baki Khata)</h1>
+        </div>
         <Link
           href="/bill/new"
-          className="flex min-h-16 w-full items-center justify-center rounded-xl bg-green-700 text-lg font-semibold text-white"
+          className="flex min-h-16 w-full items-center justify-center rounded-xl bg-green-700 text-lg font-semibold text-white shadow-sm hover:bg-green-800"
         >
           + New Credit Bill (+ Naya Bill)
         </Link>
       </header>
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-sm text-stone-500">Total Outstanding (Kul Baaki)</p>
           <p className="text-2xl font-bold text-stone-900">
             {formatRupees(summary.totalOutstanding)}
           </p>
         </div>
-        <div className="rounded-xl border bg-white p-4">
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-sm text-stone-500">Total Overdue (Kitna Overdue Hai)</p>
           <p className="text-2xl font-bold text-red-600">{formatRupees(summary.totalOverdue)}</p>
           <p className="text-sm text-stone-600">
@@ -129,7 +157,7 @@ export default async function UdhaarListPage({
           name="q"
           defaultValue={query}
           placeholder="Search customer name (Naam se dhoondhiye)"
-          className="min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-lg text-stone-900"
+          className="min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-lg text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-800"
         />
         <input
           type="hidden"
@@ -138,13 +166,13 @@ export default async function UdhaarListPage({
         />
         <button
           type="submit"
-          className="min-h-12 w-full rounded-xl bg-stone-800 px-4 text-lg font-semibold text-white"
+          className="min-h-12 w-full rounded-xl bg-stone-800 px-4 text-lg font-semibold text-white hover:bg-stone-900"
         >
           Search
         </button>
       </form>
 
-      <nav className="flex gap-2 overflow-x-auto">
+      <nav aria-label="Status filters" className="flex gap-2 overflow-x-auto pb-1">
         <Link href={buildListHref([...FILTER_STATUSES], query)} className={chipClass(allActive)}>
           All (Sab)
         </Link>
@@ -160,13 +188,13 @@ export default async function UdhaarListPage({
       </nav>
 
       {shown.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border bg-white p-6 text-center">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-stone-200 bg-white p-6 text-center shadow-sm">
           <p className="text-lg text-stone-700">
             No bills match these filters (Is filter mein koi bill nahi)
           </p>
           <Link
             href="/?status=ALL"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-stone-800 px-4 text-lg font-semibold text-white"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-stone-800 px-4 text-lg font-semibold text-white hover:bg-stone-900"
           >
             Show all bills (Sab dikhao)
           </Link>
@@ -178,10 +206,10 @@ export default async function UdhaarListPage({
             const edit = editById.get(row.id);
             return (
               <li key={row.id}>
-                <div className="flex flex-col gap-2 rounded-xl border bg-white p-4">
+                <div className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
                   <Link href={"/bill/" + row.id} className="flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-lg font-semibold">{row.customerName}</span>
+                      <span className="text-lg font-semibold text-stone-900">{row.customerName}</span>
                       <span className={"rounded-full px-3 py-1 text-sm font-medium " + badge.className}>
                         {badge.label}
                       </span>
@@ -193,7 +221,7 @@ export default async function UdhaarListPage({
                     </div>
 
                     {row.status === "PAID" ? (
-                      <p className="text-stone-600">Paid in full</p>
+                      <p className="text-stone-600 font-medium">Paid in full</p>
                     ) : (
                       <p
                         className={
@@ -206,7 +234,7 @@ export default async function UdhaarListPage({
                     )}
 
                     <p className="text-sm text-stone-500">
-                    Due {formatShortDate(row.dueDate)}
+                      Due {formatShortDate(row.dueDate)}
                       {row.status === "OVERDUE" && row.daysOverdue > 0 && (
                         <span className="font-medium text-red-600">
                           {" · " +
@@ -215,11 +243,12 @@ export default async function UdhaarListPage({
                         </span>
                       )}
                     </p>
-                    {row.status !== "PAID" && lastRemindedLabel(lastSentById.get(row.id) ?? null, new Date()) && (
-                      <p className="text-sm text-stone-500">
-                        {lastRemindedLabel(lastSentById.get(row.id) ?? null, new Date())}
-                      </p>
-                    )}
+                    {row.status !== "PAID" &&
+                      lastRemindedLabel(lastSentById.get(row.id) ?? null, new Date()) && (
+                        <p className="text-sm text-stone-500">
+                          {lastRemindedLabel(lastSentById.get(row.id) ?? null, new Date())}
+                        </p>
+                      )}
                   </Link>
 
                   {row.balance > 0 && <RecordPaymentModal billId={row.id} balance={row.balance} />}
@@ -230,6 +259,18 @@ export default async function UdhaarListPage({
           })}
         </ul>
       )}
-    </main>
+    </div>
+  );
+
+  const forecastView = (
+    <CashForecastPanel input={forecastInput} showBackLink={false} />
+  );
+
+  return (
+    <MainDashboardTabs
+      initialTab={initialTab}
+      receivablesView={receivablesView}
+      forecastView={forecastView}
+    />
   );
 }

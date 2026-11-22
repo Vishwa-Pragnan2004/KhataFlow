@@ -46,7 +46,13 @@ const rupees = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 const WINDOWS = [30, 60, 90];
 
-export default function CashForecastPanel({ input }: { input: CashForecastInput }) {
+export default function CashForecastPanel({
+  input,
+  showBackLink = false,
+}: {
+  input: CashForecastInput;
+  showBackLink?: boolean;
+}) {
   const { customers, invoices, bills, settings, invoiceRefs } = input;
 
   const [windowDays, setWindowDays] = useState(90);
@@ -184,94 +190,97 @@ export default function CashForecastPanel({ input }: { input: CashForecastInput 
   const pick = (key: Status) => setPieFilter((prev) => (prev === key ? null : key));
 
   return (
-    <div className="rounded-2xl bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-3xl space-y-5 px-2 py-4 sm:px-4">
-        <header className="flex flex-col gap-1">
+    <div className="flex flex-col gap-5 text-slate-900">
+      <header className="flex flex-col gap-1">
+        {showBackLink && (
           <Link
             href="/"
             className="inline-flex w-fit items-center text-sm font-medium text-stone-700 hover:text-stone-900 hover:underline"
           >
             ← Back to Udhaar Receivables
           </Link>
-          <div className="mt-2">
-            <h1 className="text-2xl font-bold text-slate-900">Cash Forecast (Nakad Anumaan)</h1>
-            <p className="text-sm text-slate-600">{settings.shopName ?? "Sri Laxmi Stores"}</p>
-          </div>
-        </header>
-
-        {/* 30/60/90 day toggle */}
-        <div className="grid grid-cols-3 gap-2">
-          {WINDOWS.map((d) => {
-            const active = windowDays === d;
-            return (
-              <button
-                key={d}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setWindowDays(d)}
-                className={
-                  "min-h-11 rounded-xl px-3 font-medium transition-colors " +
-                  (active ? "bg-indigo-600 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50")
-                }
-              >
-                {d} days
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Cash shortfall alert banner */}
-        <Verdict
-          windowDays={windowDays}
-          chosen={chosen}
-          all={all}
-          tickedNames={tickedNames}
-          hasTicked={hasTicked}
-        />
-
-        {/* Interactive forecast line chart */}
-        <div className="rounded-2xl bg-white p-3 shadow-sm">
-          <h2 className="mb-2 text-base font-semibold text-slate-800">
-            Cash over the next {windowDays} days
-          </h2>
-          <ForecastChart points={points} scenarioPoints={scenarioPoints} windowDays={windowDays} />
-        </div>
-
-        {/* Invoices by status breakdown */}
-        <div className="rounded-2xl bg-white p-3 shadow-sm">
-          <h2 className="mb-2 text-base font-semibold text-slate-800">Invoices by status</h2>
-          <StatusPie
-            counts={counts}
-            amounts={amounts}
-            total={total}
-            pieFilter={pieFilter}
-            onPick={pick}
-          />
-        </div>
-
-        {/* What-if scenario list */}
-        {openInvoices.length === 0 ? (
-          <div className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm">
-            No money is owed to you right now.
-          </div>
-        ) : (
-          <WhatIfList
-            items={items}
-            selected={selected}
-            pieFilter={pieFilter}
-            onToggle={(id) => toggle(Number(id))}
-            onTickOverdue={tickOverdue}
-            onTickTop3={tickTop3}
-            onClear={clear}
-            tickedTotal={tickedTotal}
-            tickedCount={tickedCount}
-          />
         )}
-
-        <div className="rounded-2xl bg-white p-4 text-sm text-slate-700 shadow-sm">
-          Cash today {rupees(settings.openingBalance)} · Coming in (unpaid invoices){" "}
-          {rupees(comingIn)} · Bills in next 30 days {rupees(billsNext30)}
+        <div className="mt-1">
+          <h2 className="text-2xl font-bold text-slate-900">Cash Forecast (Nakad Anumaan)</h2>
+          <p className="text-sm text-slate-600">{settings.shopName ?? "Sri Laxmi Stores"}</p>
         </div>
+      </header>
+
+      {/* 30/60/90-Day Range Toggle */}
+      <div className="grid grid-cols-3 gap-2">
+        {WINDOWS.map((d) => {
+          const active = windowDays === d;
+          return (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setWindowDays(d)}
+              className={
+                "min-h-11 rounded-xl px-3 font-semibold transition-colors " +
+                (active
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50")
+              }
+            >
+              {d} days
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Cash Shortfall Alert Banner */}
+      <Verdict
+        windowDays={windowDays}
+        chosen={chosen}
+        all={all}
+        tickedNames={tickedNames}
+        hasTicked={hasTicked}
+      />
+
+      {/* Interactive Forecast Line Chart */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+        <h3 className="mb-3 text-base font-semibold text-slate-800">
+          Cash balance over next {windowDays} days
+        </h3>
+        <ForecastChart points={points} scenarioPoints={scenarioPoints} windowDays={windowDays} />
+      </div>
+
+      {/* Invoices by Status Pie / Donut */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+        <h3 className="mb-2 text-base font-semibold text-slate-800">Invoices by status</h3>
+        <StatusPie
+          counts={counts}
+          amounts={amounts}
+          total={total}
+          pieFilter={pieFilter}
+          onPick={pick}
+        />
+      </div>
+
+      {/* What-If Checkboxes */}
+      {openInvoices.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center text-slate-700 shadow-sm">
+          No money is owed to you right now. All caught up!
+        </div>
+      ) : (
+        <WhatIfList
+          items={items}
+          selected={selected}
+          pieFilter={pieFilter}
+          onToggle={(id) => toggle(Number(id))}
+          onTickOverdue={tickOverdue}
+          onTickTop3={tickTop3}
+          onClear={clear}
+          tickedTotal={tickedTotal}
+          tickedCount={tickedCount}
+        />
+      )}
+
+      {/* Cash Summary Footer */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
+        Cash today {rupees(settings.openingBalance)} · Coming in (unpaid invoices){" "}
+        {rupees(comingIn)} · Bills in next 30 days {rupees(billsNext30)}
       </div>
     </div>
   );

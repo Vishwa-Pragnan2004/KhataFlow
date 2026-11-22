@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 const money = (n: number) => (n < 0 ? "-" : "") + "\u20B9" + Math.abs(n).toLocaleString("en-IN");
@@ -21,6 +22,12 @@ interface StatusPieProps {
 }
 
 export default function StatusPie({ counts, amounts, total, pieFilter, onPick }: StatusPieProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const pieData = SLICES.map((s) => ({ ...s, value: counts[s.key] })).filter((s) => s.value > 0);
 
   const detail: Record<StatusKey, string> = {
@@ -33,29 +40,47 @@ export default function StatusPie({ counts, amounts, total, pieFilter, onPick }:
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
-            <Pie
-              data={pieData}
-              dataKey="value"
-              innerRadius={60}
-              outerRadius={90}
-              onClick={(entry: { key: StatusKey }) => onPick(entry.key)}
-            >
-              {pieData.map((s) => (
-                <Cell
-                  key={s.key}
-                  fill={s.color}
-                  opacity={pieFilter && pieFilter !== s.key ? 0.35 : 1}
-                />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="relative mx-auto h-[220px] w-full min-w-0 max-w-[280px]">
+        {mounted ? (
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
+            <PieChart>
+              <Pie
+                data={pieData.length > 0 ? pieData : [{ name: "No invoices", value: 1, key: "EMPTY" as StatusKey, color: "#e2e8f0", icon: "" }]}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={65}
+                outerRadius={95}
+                paddingAngle={pieData.length > 1 ? 3 : 0}
+                onClick={(entry: { key?: StatusKey }) => {
+                  if (entry?.key && entry.key !== ("EMPTY" as StatusKey)) {
+                    onPick(entry.key);
+                  }
+                }}
+              >
+                {pieData.length > 0 ? (
+                  pieData.map((s) => (
+                    <Cell
+                      key={s.key}
+                      fill={s.color}
+                      opacity={pieFilter && pieFilter !== s.key ? 0.35 : 1}
+                      stroke={pieFilter === s.key ? "#1e1b4b" : "#ffffff"}
+                      strokeWidth={pieFilter === s.key ? 2 : 1}
+                    />
+                  ))
+                ) : (
+                  <Cell key="empty" fill="#e2e8f0" stroke="none" />
+                )}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
+            Loading chart...
+          </div>
+        )}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-3xl font-bold text-gray-900">{total}</span>
-          <span className="text-xs text-gray-600">invoices</span>
+          <span className="text-xs font-medium text-gray-500">invoices</span>
         </div>
       </div>
 
@@ -66,21 +91,25 @@ export default function StatusPie({ counts, amounts, total, pieFilter, onPick }:
             type="button"
             aria-pressed={pieFilter === s.key}
             onClick={() => onPick(s.key)}
-            className={`flex min-h-11 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2 ${
-              pieFilter === s.key ? "border-indigo-300 bg-indigo-50" : "border-gray-200 bg-white"
+            className={`flex min-h-11 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2 ${
+              pieFilter === s.key
+                ? "border-indigo-400 bg-indigo-50 font-medium shadow-sm"
+                : "border-gray-200 bg-white hover:bg-slate-50"
             }`}
           >
-            <span aria-hidden="true">{s.icon}</span>
-            <span>
-              <span className="font-bold text-gray-900">{s.name}</span>
-              <span className="block text-sm text-gray-700">{detail[s.key]}</span>
-            </span>
+            <span aria-hidden="true" className="text-base">{s.icon}</span>
+            <div className="flex-1">
+              <span className="font-semibold text-gray-900">{s.name}</span>
+              <span className="block text-xs text-gray-600">{detail[s.key]}</span>
+            </div>
           </button>
         ))}
       </div>
 
       {pieFilter && (
-        <p className="mt-2 text-sm text-gray-600">Showing: {activeName}. Tap again to clear.</p>
+        <p className="mt-3 text-center text-xs text-gray-500">
+          Filtered by <span className="font-semibold text-gray-700">{activeName}</span>. Tap again to clear filter.
+        </p>
       )}
     </div>
   );

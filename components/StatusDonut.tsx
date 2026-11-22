@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { formatRupees } from "@/lib/money";
 import type { StatusCategory, StatusGroups } from "@/lib/invoiceStatus";
@@ -28,7 +28,12 @@ function whatsappNumber(phone: string): string {
 }
 
 export default function StatusDonut({ counts, amounts, groups }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<StatusCategory | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const total = counts.PAID + counts.PARTIAL + counts.UNPAID;
 
@@ -53,27 +58,33 @@ export default function StatusDonut({ counts, amounts, groups }: Props) {
   return (
     <section className="min-w-0 rounded-2xl bg-white p-4 shadow-sm">
       <div className="relative mt-2 h-60 min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={60}
-              outerRadius={90}
-              onClick={(_, index) => toggle(SLICES[index].key)}
-            >
-              {SLICES.map((s) => (
-                <Cell
-                  key={s.key}
-                  fill={s.color}
-                  stroke={selected === s.key ? "#1e1b4b" : "none"}
-                  strokeWidth={selected === s.key ? 3 : 0}
-                />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
+        {mounted ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={60}
+                outerRadius={90}
+                onClick={(_, index) => toggle(SLICES[index].key)}
+              >
+                {SLICES.map((s) => (
+                  <Cell
+                    key={s.key}
+                    fill={s.color}
+                    stroke={selected === s.key ? "#1e1b4b" : "none"}
+                    strokeWidth={selected === s.key ? 3 : 0}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
+            Loading chart...
+          </div>
+        )}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold text-indigo-900">{total}</span>
           <span className="text-xs text-gray-500">invoices</span>

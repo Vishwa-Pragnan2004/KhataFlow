@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   ComposedChart,
   Area,
@@ -29,10 +30,24 @@ interface ForecastChartProps {
 }
 
 export default function ForecastChart({ points, scenarioPoints, windowDays }: ForecastChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex h-[320px] w-full items-center justify-center rounded-2xl bg-slate-50 p-4 text-sm text-slate-400">
+        Loading cash forecast chart...
+      </div>
+    );
+  }
+
   if (!points || points.length === 0) {
     return (
-      <div className="rounded-2xl bg-white p-6 text-center text-slate-500 shadow-sm">
-        No forecast data available.
+      <div className="flex h-[320px] w-full items-center justify-center rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+        No forecast data available for this window.
       </div>
     );
   }
@@ -44,60 +59,78 @@ export default function ForecastChart({ points, scenarioPoints, windowDays }: Fo
     belowZero: Math.min(p.balance, 0),
   }));
 
-  const ticks = [...new Set([0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * (windowDays - 1))))];
+  const maxDay = Math.max(1, windowDays - 1);
+  const ticks = [...new Set([0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * maxDay)))];
 
   const source = scenarioPoints && scenarioPoints.length > 0 ? scenarioPoints : points;
   const low = source.reduce((m, p) => (p.balance < m.balance ? p : m), source[0]);
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
+    <div className="h-[320px] w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
+        <ComposedChart data={data} margin={{ top: 15, right: 15, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="day"
             type="number"
-            domain={[0, windowDays - 1]}
+            domain={[0, maxDay]}
             ticks={ticks}
             tickFormatter={(d: number) => dayToDate(d)}
+            tick={{ fontSize: 12, fill: "#64748b" }}
           />
           <YAxis
-            width={60}
+            width={65}
             tickFormatter={(v: number) =>
               v === 0
                 ? "\u20B90"
                 : (v < 0 ? "-\u20B9" : "\u20B9") +
                   (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(0) + "k" : Math.abs(v))
             }
+            tick={{ fontSize: 12, fill: "#64748b" }}
           />
           <Tooltip
-            labelFormatter={(d: unknown) => dayToDate(d as number)}
-            formatter={(value, name) => [money(Number(value ?? 0)), String(name ?? "")] as [string, string]}
+            labelFormatter={(d: unknown) => dayToDate(Number(d ?? 0))}
+            formatter={(value: unknown, name: unknown) => [money(Number(value ?? 0)), String(name ?? "")]}
           />
-          <Area dataKey="belowZero" fill="#fecaca" stroke="none" name="Below zero" />
-          <Line dataKey="baseline" name="Without ticks" stroke="#4f46e5" strokeWidth={2.5} dot={false} />
+          <Area dataKey="belowZero" baseValue={0} fill="#fecaca" stroke="none" name="Shortfall" />
+          <Line
+            type="monotone"
+            dataKey="baseline"
+            name="Baseline projection"
+            stroke="#4f46e5"
+            strokeWidth={2.5}
+            dot={false}
+          />
           {scenarioPoints && (
             <Line
+              type="monotone"
               dataKey="scenario"
-              name="If ticked people pay"
+              name="With ticked payments"
               stroke="#16a34a"
               strokeWidth={2.5}
               strokeDasharray="6 4"
               dot={false}
             />
           )}
-          <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
           {low && (
             <ReferenceDot
               x={low.day}
               y={low.balance}
-              r={6}
+              r={5}
               fill="#dc2626"
-              stroke="#fff"
-              label={{ value: money(low.balance), position: "top", fill: "#dc2626", fontSize: 12 }}
+              stroke="#ffffff"
+              strokeWidth={2}
+              label={{
+                value: money(low.balance),
+                position: low.balance < 0 ? "bottom" : "top",
+                fill: "#dc2626",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
             />
           )}
-          <Legend verticalAlign="bottom" />
+          <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10, fontSize: 13 }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
